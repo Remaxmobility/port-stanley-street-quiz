@@ -14,6 +14,17 @@ const nameOverrides = {
   // of Brayside St's existing chain — one continuous real street, OSM had
   // it split like the earlier Fairview/Fernie->Brayside case.
   'Merville Street': 'Brayside Street',
+  // Per Jason: Main St runs from (42.665539,-81.211904) to
+  // (42.663106,-81.210733). Jamieson St's end (42.6655206,-81.2119368) is
+  // the exact node where main-street-1 already ends, and Jamieson's other
+  // end (42.6654805,-81.2109452) is the exact node where Orchard St starts —
+  // both mistagged pieces of the same real Main St. See mainStreetGapConnector
+  // below for the real-but-OSM-absent stretch past Orchard's south end.
+  'Jamieson Street': 'Main Street',
+  'Orchard Street': 'Main Street',
+  // Maple St's start node (42.665641,-81.2068849) is the exact end node of
+  // Vimy Ridge's existing chain — one continuous real street.
+  'Maple Street': 'Vimy Ridge',
 };
 
 // Same idea as nameOverrides, but keyed by specific OSM way id instead of by
@@ -75,6 +86,20 @@ const georgeRoundaboutConnector = {
   ],
 };
 
+// Per Jason: Main St continues past Orchard St's south end (42.6643672,
+// -81.2109075) down to the existing main-street-4 chain's north end
+// (42.6630597,-81.2107865) — a real ~146m stretch with no OSM way at all
+// (same known-gap pattern as The Prom / Breakwater / Sandcastle Key: OSM
+// simply has nothing to pull there). Straight-line placeholder geometry
+// between the two confirmed real endpoints, same as those other gaps would
+// need if hand-digitized.
+const mainStreetGapConnector = {
+  id: 'main-street-orchard-gap-connector',
+  name: 'Main Street',
+  highway: 'residential',
+  geometry: [[42.6643672, -81.2109075], [42.6630597, -81.2107865]],
+};
+
 const rawWithDupes = [
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_main.json'))),
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_residential.json'))),
@@ -86,7 +111,7 @@ const rawWithDupes = [
   .filter(way => !excludeWayIds.has(way.id))
   .map(way => wayNameOverrides[way.id] ? { ...way, name: wayNameOverrides[way.id] } : way)
   .map(way => nameOverrides[way.name] ? { ...way, name: nameOverrides[way.name] } : way)
-  .concat([georgeRoundaboutConnector]);
+  .concat([georgeRoundaboutConnector, mainStreetGapConnector]);
 
 // Overlapping Overpass bbox queries legitimately return the same way twice
 // when it crosses both boxes (e.g. East Road spans the original and north
