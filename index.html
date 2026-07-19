@@ -181,6 +181,35 @@
     white-space: nowrap;
   }
   .hint-pill b { color: var(--text); font-weight: 600; }
+
+  .debug-toggle {
+    position: absolute;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    right: 12px;
+    z-index: 550;
+    pointer-events: auto;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+  }
+  .debug-toggle.active { color: var(--accent); border-color: var(--accent); }
+  .street-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1a202c;
+    text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 5px #fff;
+    white-space: nowrap;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
@@ -198,6 +227,8 @@
     <span class="strike-icon" data-i="2">&#10084;&#65039;</span>
   </div>
 </div>
+
+<button class="debug-toggle" id="debugToggle">Label streets</button>
 
 <div class="hint-banner" id="hintBanner">
   <div class="hint-pill">
@@ -238,6 +269,10 @@
 (function () {
   const BOUNDS = L.latLngBounds([42.6575, -81.2445], [42.6815, -81.1975]);
   const CENTER = [42.6694, -81.2214];
+
+  // Exposed for automated/backtest tooling (Leaflet-projection-accurate
+  // scripted taps) — no effect on normal play.
+  window.__psTest = {};
 
   const map = L.map('map', {
     center: CENTER,
@@ -283,6 +318,10 @@
   let state = GameEngine.init(STREET_DATA);
   let feedbackLayer = L.layerGroup().addTo(map);
   let inputLocked = false;
+
+  window.__psTest.map = map;
+  window.__psTest.getState = () => state;
+  window.__psTest.tapLatLng = (lat, lon) => handleTap(L.latLng(lat, lon));
 
   function renderHud() {
     document.getElementById('scoreValue').textContent = state.score;
@@ -364,6 +403,32 @@
   }
 
   map.on('click', e => handleTap(e.latlng));
+
+  // Debug/learn toggle: labels every street in STREET_DATA at its
+  // midpoint, for troubleshooting hit-test geometry and for learning
+  // street names by exploring the map instead of the quiz flow.
+  const debugLabelsLayer = L.layerGroup();
+  let debugLabelsOn = false;
+  STREET_DATA.forEach(s => {
+    const mid = s.geometry[Math.floor(s.geometry.length / 2)];
+    L.marker(mid, {
+      icon: L.divIcon({
+        className: '',
+        html: `<div class="street-label">${s.name}</div>`,
+        iconSize: null,
+      }),
+      interactive: false,
+    }).addTo(debugLabelsLayer);
+  });
+  document.getElementById('debugToggle').addEventListener('click', () => {
+    debugLabelsOn = !debugLabelsOn;
+    document.getElementById('debugToggle').classList.toggle('active', debugLabelsOn);
+    if (debugLabelsOn) {
+      debugLabelsLayer.addTo(map);
+    } else {
+      map.removeLayer(debugLabelsLayer);
+    }
+  });
 
   document.getElementById('playAgainBtn').addEventListener('click', () => {
     document.getElementById('endOverlay').classList.remove('show');

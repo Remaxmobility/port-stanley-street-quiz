@@ -10,6 +10,10 @@ const nameOverrides = {
   'Fairview Street': 'Brayside Street',
   'Fernie Street': 'Brayside Street',
   'Victoria Street': 'Harrison Place',
+  // Merville St's end node (42.6661058,-81.2031083) is the exact start node
+  // of Brayside St's existing chain — one continuous real street, OSM had
+  // it split like the earlier Fairview/Fernie->Brayside case.
+  'Merville Street': 'Brayside Street',
 };
 
 // Same idea as nameOverrides, but keyed by specific OSM way id instead of by
@@ -44,7 +48,32 @@ const excludeWayIds = new Set([
              // straight line; the direct way already bridges the main
              // chain cleanly, this detour was stranding itself as a
              // spurious separate 95m "Frances Street" quiz entry.
+  997749168, // George St roundabout, tagged as a single 19-pt CLOSED loop
+             // (start==end). Its junctions with George St's two chains are
+             // at interior points (idx5, idx14 of the loop), not the loop's
+             // own start/end, so endpoint-only chainSegments can't bridge
+             // through it — replaced below by georgeRoundaboutConnector,
+             // an open arc between those two exact junction points.
 ]);
+
+// Per Jason: George St runs through the roundabout — currently split into
+// two disconnected chains because chainSegments can't route through a
+// closed-loop way (see excludeWayIds note above). Replace the loop with the
+// shorter of its two arcs between the two real junction points, as a normal
+// open way, so it chains like any other segment. Coordinates verified: idx5
+// (42.665373,-81.2259571) is george-street-1's exact end node; idx14
+// (42.6653439,-81.2256682) is george-street-0's exact start node.
+const georgeRoundaboutConnector = {
+  id: 'george-roundabout-connector',
+  name: 'George Street',
+  highway: 'residential',
+  geometry: [
+    [42.665373, -81.2259571], [42.6654064, -81.2259454], [42.6654353, -81.2259198],
+    [42.6654568, -81.2258831], [42.6654686, -81.225839], [42.6654695, -81.225792],
+    [42.6654393, -81.225709], [42.6654113, -81.2256814], [42.6653784, -81.2256674],
+    [42.6653439, -81.2256682],
+  ],
+};
 
 const rawWithDupes = [
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_main.json'))),
@@ -56,7 +85,8 @@ const rawWithDupes = [
 ]
   .filter(way => !excludeWayIds.has(way.id))
   .map(way => wayNameOverrides[way.id] ? { ...way, name: wayNameOverrides[way.id] } : way)
-  .map(way => nameOverrides[way.name] ? { ...way, name: nameOverrides[way.name] } : way);
+  .map(way => nameOverrides[way.name] ? { ...way, name: nameOverrides[way.name] } : way)
+  .concat([georgeRoundaboutConnector]);
 
 // Overlapping Overpass bbox queries legitimately return the same way twice
 // when it crosses both boxes (e.g. East Road spans the original and north
