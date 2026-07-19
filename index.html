@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Port Stanley Street Quiz</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: rgba(20, 28, 45, 0.72);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --accent: #4fd1c5;
+    --accent-2: #f6ad55;
+    --danger: #fc8181;
+    --text: #eef2f7;
+    --text-dim: #9aa7bd;
+    --hit: #48bb78;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+  #map { position: absolute; inset: 0; z-index: 0; }
+
+  .hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: max(12px, env(safe-area-inset-top)) 12px 0;
+    pointer-events: none;
+    gap: 10px;
+  }
+  .pill {
+    pointer-events: auto;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 16px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  .score-pill { display: flex; flex-direction: column; align-items: flex-start; min-width: 84px; }
+  .score-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+  .score-value { font-size: 22px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+  .strikes-pill { display: flex; gap: 6px; align-items: center; }
+  .strike-icon { font-size: 18px; opacity: 0.25; transition: all 0.25s ease; }
+  .strike-icon.lost { opacity: 1; transform: scale(1.15); color: var(--danger); }
+
+  .prompt-banner {
+    position: absolute;
+    top: 74px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 500;
+    pointer-events: none;
+    text-align: center;
+    max-width: min(92vw, 420px);
+  }
+  .prompt-card {
+    pointer-events: auto;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 18px;
+    padding: 14px 22px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  .prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+  .prompt-name { font-size: 21px; font-weight: 700; line-height: 1.15; }
+  .prompt-points { margin-top: 6px; font-size: 13px; color: var(--accent-2); font-weight: 600; }
+
+  .toast {
+    position: absolute;
+    bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    z-index: 600;
+    opacity: 0;
+    transition: all 0.28s cubic-bezier(.2,.9,.3,1.2);
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast-card {
+    padding: 12px 22px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    backdrop-filter: blur(10px);
+  }
+  .toast-card.hit { background: rgba(72, 187, 120, 0.92); color: #06210f; }
+  .toast-card.miss { background: rgba(252, 129, 129, 0.92); color: #2a0808; }
+
+  .end-overlay {
+    position: absolute; inset: 0; z-index: 900;
+    background: radial-gradient(ellipse at center, rgba(11,18,32,0.86), rgba(11,18,32,0.97));
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .end-overlay.show { opacity: 1; pointer-events: auto; }
+  .end-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 22px;
+    padding: 28px 26px;
+    width: min(92vw, 440px);
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+  }
+  .end-card h1 { margin: 0 0 4px; font-size: 26px; }
+  .end-card .final-score { font-size: 42px; font-weight: 800; color: var(--accent); margin: 6px 0 18px; }
+  .breakdown { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+  .breakdown th { text-align: left; color: var(--text-dim); font-weight: 600; padding: 6px 4px; border-bottom: 1px solid var(--panel-border); }
+  .breakdown td { padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .breakdown tr.hit-row td:last-child { color: var(--hit); }
+  .breakdown tr.miss-row td:last-child { color: var(--danger); }
+  .play-again {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), #38b2ac);
+    color: #06251f;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .play-again:active { transform: scale(0.97); }
+
+  .leaflet-container { background: var(--bg) !important; }
+
+  .guess-marker {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 6px rgba(255,255,255,0.15);
+  }
+  .guess-marker.hit-marker { background: var(--hit); animation: pulse-hit 0.6s ease-out; }
+  .guess-marker.miss-marker { background: var(--danger); }
+  @keyframes pulse-hit {
+    0% { transform: scale(0.4); opacity: 0.4; }
+    60% { transform: scale(1.6); opacity: 0.9; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div class="hud">
+  <div class="pill score-pill">
+    <div class="score-label">Score</div>
+    <div class="score-value" id="scoreValue">0</div>
+  </div>
+  <div class="pill strikes-pill" id="strikesPill">
+    <span class="strike-icon" data-i="0">&#10084;&#65039;</span>
+    <span class="strike-icon" data-i="1">&#10084;&#65039;</span>
+    <span class="strike-icon" data-i="2">&#10084;&#65039;</span>
+  </div>
+</div>
+
+<div class="prompt-banner">
+  <div class="prompt-card">
+    <div class="prompt-label">Find this street</div>
+    <div class="prompt-name" id="promptName">&hellip;</div>
+    <div class="prompt-points" id="promptPoints"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-card" id="toastCard"></div>
+</div>
+
+<div class="end-overlay" id="endOverlay">
+  <div class="end-card">
+    <h1>Game Over</h1>
+    <div class="final-score" id="finalScore">0</div>
+    <table class="breakdown">
+      <thead><tr><th>Street</th><th>Pts</th><th>Result</th></tr></thead>
+      <tbody id="breakdownBody"></tbody>
+    </table>
+    <button class="play-again" id="playAgainBtn">Play Again</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="data/streets_inline.js"></script>
+<script src="game-engine.js"></script>
+<script>
+(function () {
+  const BOUNDS = L.latLngBounds([42.6575, -81.2360], [42.6800, -81.1975]);
+  const CENTER = [42.6687, -81.2167];
+
+  const map = L.map('map', {
+    center: CENTER,
+    zoom: 15,
+    minZoom: 14,
+    maxZoom: 17,
+    maxBounds: BOUNDS.pad(0.05),
+    maxBoundsViscosity: 0.8,
+    zoomControl: false,
+    attributionControl: false,
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd',
+    maxZoom: 20,
+  }).addTo(map);
+
+  let state = GameEngine.init(STREET_DATA);
+  let feedbackLayer = L.layerGroup().addTo(map);
+  let inputLocked = false;
+
+  function renderHud() {
+    document.getElementById('scoreValue').textContent = state.score;
+    document.querySelectorAll('.strike-icon').forEach(el => {
+      el.classList.toggle('lost', Number(el.dataset.i) < state.strikes);
+    });
+  }
+
+  // Renders the HUD plus the current round's prompt, and unlocks input for
+  // that round. Only call this when state.currentStreet is the round the
+  // player should now be guessing — never mid-transition, or a second tap
+  // during the reveal animation would score against the street being replaced.
+  function render() {
+    renderHud();
+
+    if (state.roundStatus === 'gameover') {
+      showEndScreen();
+      return;
+    }
+
+    const s = state.currentStreet;
+    document.getElementById('promptName').textContent = s.name;
+    document.getElementById('promptPoints').textContent = `${s.points} points`;
+    inputLocked = false;
+  }
+
+  function showToast(hit, pointsAwarded) {
+    const toast = document.getElementById('toast');
+    const card = document.getElementById('toastCard');
+    card.className = 'toast-card ' + (hit ? 'hit' : 'miss');
+    card.textContent = hit ? 'Hit! +' + pointsAwarded : 'Miss';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 900);
+  }
+
+  function showEndScreen() {
+    document.getElementById('finalScore').textContent = state.score;
+    const body = document.getElementById('breakdownBody');
+    body.innerHTML = '';
+    state.history.forEach(h => {
+      const tr = document.createElement('tr');
+      tr.className = h.hit ? 'hit-row' : 'miss-row';
+      tr.innerHTML = `<td>${h.street.name}</td><td>${h.pointsAwarded}</td><td>${h.hit ? 'Hit' : 'Miss'}</td>`;
+      body.appendChild(tr);
+    });
+    document.getElementById('endOverlay').classList.add('show');
+  }
+
+  function handleTap(latlng) {
+    if (inputLocked || state.roundStatus === 'gameover') return;
+    inputLocked = true;
+
+    const guessState = GameEngine.submitGuess(state, latlng.lat, latlng.lng);
+    const round = guessState.history[guessState.history.length - 1];
+
+    feedbackLayer.clearLayers();
+    L.marker(latlng, {
+      icon: L.divIcon({
+        className: '',
+        html: `<div class="guess-marker ${round.hit ? 'hit-marker' : 'miss-marker'}"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      }),
+    }).addTo(feedbackLayer);
+
+    if (!round.hit) {
+      L.polyline(round.street.geometry, { color: '#fc8181', weight: 5, opacity: 0.85 }).addTo(feedbackLayer);
+    }
+
+    showToast(round.hit, round.pointsAwarded);
+    state = guessState;
+    renderHud();
+
+    setTimeout(() => {
+      feedbackLayer.clearLayers();
+      state = GameEngine.nextRound(state);
+      render();
+    }, round.hit ? 700 : 1400);
+  }
+
+  map.on('click', e => handleTap(e.latlng));
+
+  document.getElementById('playAgainBtn').addEventListener('click', () => {
+    document.getElementById('endOverlay').classList.remove('show');
+    feedbackLayer.clearLayers();
+    state = GameEngine.init(STREET_DATA);
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
