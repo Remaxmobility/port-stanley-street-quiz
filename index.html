@@ -140,12 +140,12 @@
   }
   .play-again:active { transform: scale(0.97); }
 
-  .leaflet-container { background: var(--bg) !important; }
+  .leaflet-container { background: #e6e3dd !important; }
 
   .guess-marker {
     width: 16px; height: 16px; border-radius: 50%;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 6px rgba(255,255,255,0.15);
+    border: 2px solid #1a202c;
+    box-shadow: 0 0 0 6px rgba(26,32,44,0.15);
   }
   .guess-marker.hit-marker { background: var(--hit); animation: pulse-hit 0.6s ease-out; }
   .guess-marker.miss-marker { background: var(--danger); }
@@ -154,6 +154,33 @@
     60% { transform: scale(1.6); opacity: 0.9; }
     100% { transform: scale(1); opacity: 1; }
   }
+
+  .hint-banner {
+    position: absolute;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    z-index: 550;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s ease;
+  }
+  .hint-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .hint-pill {
+    display: flex;
+    gap: 16px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 14px;
+    padding: 10px 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .hint-pill b { color: var(--text); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -169,6 +196,13 @@
     <span class="strike-icon" data-i="0">&#10084;&#65039;</span>
     <span class="strike-icon" data-i="1">&#10084;&#65039;</span>
     <span class="strike-icon" data-i="2">&#10084;&#65039;</span>
+  </div>
+</div>
+
+<div class="hint-banner" id="hintBanner">
+  <div class="hint-pill">
+    <span>&#8226;&#8226; <b>Pinch</b> to zoom</span>
+    <span>&#9757; <b>Tap</b> to select</span>
   </div>
 </div>
 
@@ -215,7 +249,7 @@
     attributionControl: false,
   });
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
     subdomains: 'abcd',
     maxZoom: 20,
   }).addTo(map);
@@ -311,6 +345,24 @@
     state = GameEngine.init(STREET_DATA);
     render();
   });
+
+  // Show the pinch/tap hint until the player's first interaction with the
+  // map, then get out of the way for good — it's onboarding, not a
+  // permanent HUD element.
+  const hintBanner = document.getElementById('hintBanner');
+  hintBanner.classList.add('show');
+  let hintDismissed = false;
+  function dismissHint() {
+    if (hintDismissed) return;
+    hintDismissed = true;
+    hintBanner.classList.remove('show');
+  }
+  // Only dismiss on a real user tap/drag, not Leaflet's own programmatic
+  // bounds-snapping on load (which also fires zoomstart/movestart and would
+  // otherwise dismiss the hint before the player ever sees it).
+  map.on('click', dismissHint);
+  map.getContainer().addEventListener('touchstart', dismissHint, { passive: true });
+  setTimeout(dismissHint, 6000);
 
   render();
 })();
