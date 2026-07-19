@@ -182,6 +182,18 @@
   }
   .hint-pill b { color: var(--text); font-weight: 600; }
 
+  .reveal-hint {
+    position: absolute;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    z-index: 550;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+  }
+  .reveal-hint.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
   .debug-toggle {
     position: absolute;
     bottom: max(24px, env(safe-area-inset-bottom));
@@ -243,6 +255,10 @@
     <div class="prompt-name" id="promptName">&hellip;</div>
     <div class="prompt-points" id="promptPoints"></div>
   </div>
+</div>
+
+<div class="reveal-hint" id="revealHint">
+  <div class="hint-pill"><span>&#128207; That's the real street &mdash; <b>pan or zoom</b> to continue</span></div>
 </div>
 
 <div class="toast" id="toast">
@@ -395,11 +411,52 @@
     state = guessState;
     renderHud();
 
-    setTimeout(() => {
+    if (round.hit) {
+      setTimeout(() => {
+        feedbackLayer.clearLayers();
+        state = GameEngine.nextRound(state);
+        render();
+      }, 700);
+      return;
+    }
+
+    // Miss: zoom to show the real street (plus the guess point, for
+    // context on how far off it was), then wait for the player to
+    // actually move the map themselves before advancing — no fixed timer.
+    //
+    // Can't use Leaflet's own 'movestart'/'moveend' to detect "the user
+    // moved it": this map has maxBounds+maxBoundsViscosity, and the
+    // correction it applies after flyToBounds's own animation fires
+    // additional movestart/moveend cycles that look identical to a real
+    // user gesture (confirmed by browser testing — the reveal advanced on
+    // its own within ~1.5s with zero user interaction). Same class of bug
+    // as the onboarding-hint false-dismiss fixed in session 4, but the
+    // "wait for our own moveend first" workaround that fixed THAT case
+    // isn't enough here since the extra cycles come after moveend too.
+    // Listen for actual DOM-level user gestures instead — these are never
+    // fired by any programmatic map call (flyTo, fitBounds, panBy, etc.).
+    const revealBounds = L.latLngBounds(round.street.geometry).extend(latlng);
+    map.flyToBounds(revealBounds, { padding: [48, 96], maxZoom: 17 });
+    document.getElementById('revealHint').classList.add('show');
+
+    const container = map.getContainer();
+    function advanceAfterUserMove() {
+      map.off('dragstart', advanceAfterUserMove);
+      container.removeEventListener('wheel', advanceAfterUserMove);
+      container.removeEventListener('dblclick', advanceAfterUserMove);
+      container.removeEventListener('touchmove', onTouchMove);
+      document.getElementById('revealHint').classList.remove('show');
       feedbackLayer.clearLayers();
       state = GameEngine.nextRound(state);
       render();
-    }, round.hit ? 700 : 1400);
+    }
+    function onTouchMove(e) {
+      if (e.touches.length >= 2) advanceAfterUserMove(); // pinch = zoom intent
+    }
+    map.once('dragstart', advanceAfterUserMove);
+    container.addEventListener('wheel', advanceAfterUserMove, { passive: true });
+    container.addEventListener('dblclick', advanceAfterUserMove);
+    container.addEventListener('touchmove', onTouchMove, { passive: true });
   }
 
   map.on('click', e => handleTap(e.latlng));
