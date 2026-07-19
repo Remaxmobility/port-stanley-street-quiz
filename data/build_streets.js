@@ -25,6 +25,22 @@ const nameOverrides = {
   // Maple St's start node (42.665641,-81.2068849) is the exact end node of
   // Vimy Ridge's existing chain — one continuous real street.
   'Maple Street': 'Vimy Ridge',
+  // Per Jason: the two "Spring"-family streets were swapped. The real
+  // Spring St starts at Valley St's end (42.66455,-81.22903— confirmed
+  // exact shared node with the OSM-tagged "Lower Spring Street" chain) and
+  // continues past Bartholemew St (whose end node, 42.66354,-81.2316, is
+  // already an interior point of that same chain). The OSM-tagged "Spring
+  // Street" is a separate, geographically distinct road ~2km further west
+  // (lon -81.236 vs -81.231) — that one is actually Upper Spring St, one of
+  // the streets previously thought entirely absent from OSM.
+  'Lower Spring Street': 'Spring Street',
+  'Spring Street': 'Upper Spring Street',
+  // Google Maps audit (session 6): our data lags Google's current naming on
+  // these two. Applied per Jason's "correct to Google data" call — unlike
+  // Spring St/Franklin Dr above, these have no prior direct local-knowledge
+  // correction overriding Google, so Google wins.
+  'Bostwick Street': 'Colonel Bostwick Street',
+  '1st Street': 'First Street',
 };
 
 // Same idea as nameOverrides, but keyed by specific OSM way id instead of by
@@ -100,6 +116,61 @@ const mainStreetGapConnector = {
   geometry: [[42.6643672, -81.2109075], [42.6630597, -81.2107865]],
 };
 
+// Streets confirmed real on Google Maps (session 6 audit) but with zero OSM
+// coverage under any tag — hand-digitized from Google Maps satellite/road
+// view since Overpass has nothing to pull. ~20-40m positional tolerance,
+// fine for gameplay shape, not survey-grade. Unlike the two connectors
+// above, these are standalone quiz entries in their own right, not merged
+// into an existing chain.
+const handDigitizedStreets = [
+  // Mitchell Heights waterfront cluster, west end of town.
+  {
+    id: 'the-prom', name: 'The Prom', highway: 'residential',
+    geometry: [[42.66630, -81.22511], [42.66682, -81.22643], [42.66787, -81.22522], [42.66765, -81.22466], [42.66727, -81.22496]],
+  },
+  {
+    id: 'breakwater-blvd', name: 'Breakwater Blvd', highway: 'residential',
+    geometry: [[42.66562, -81.22533], [42.66630, -81.22511], [42.66727, -81.22496]],
+  },
+  {
+    id: 'regatta-way', name: 'Regatta Way', highway: 'residential',
+    geometry: [[42.66630, -81.22511], [42.66603, -81.22309]],
+  },
+  {
+    id: 'harbour-way', name: 'Harbour Way', highway: 'residential',
+    geometry: [[42.66659, -81.22353], [42.66629, -81.22178]],
+  },
+  {
+    id: 'sandcastle-key', name: 'Sandcastle Key', highway: 'residential',
+    geometry: [[42.66727, -81.22496], [42.66659, -81.22353], [42.66524, -81.22289]],
+  },
+  {
+    id: 'meek-street', name: 'Meek St', highway: 'residential',
+    geometry: [[42.66470, -81.23329], [42.66390, -81.23360]],
+  },
+  {
+    id: 'mckenzie-lane', name: 'McKenzie Lane', highway: 'residential',
+    geometry: [[42.66484, -81.23524], [42.66434, -81.23524]],
+  },
+  // Downtown core / east side.
+  {
+    id: 'sailors-alley', name: "Sailor's Alley", highway: 'residential',
+    geometry: [[42.66628, -81.21381], [42.66633, -81.21345], [42.66638, -81.21336]],
+  },
+  {
+    id: 'briar-hill-street', name: 'Briar Hill Street', highway: 'residential',
+    geometry: [[42.66611, -81.21680], [42.66627, -81.21622], [42.66629, -81.21610]],
+  },
+  {
+    id: 'mcclary-ave', name: 'McClary Ave', highway: 'residential',
+    geometry: [[42.66499, -81.19996], [42.66449, -81.19997]],
+  },
+  {
+    id: 'spruce-street', name: 'Spruce St', highway: 'residential',
+    geometry: [[42.66631, -81.19904], [42.66574, -81.19904]],
+  },
+];
+
 const rawWithDupes = [
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_main.json'))),
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_residential.json'))),
@@ -111,7 +182,7 @@ const rawWithDupes = [
   .filter(way => !excludeWayIds.has(way.id))
   .map(way => wayNameOverrides[way.id] ? { ...way, name: wayNameOverrides[way.id] } : way)
   .map(way => nameOverrides[way.name] ? { ...way, name: nameOverrides[way.name] } : way)
-  .concat([georgeRoundaboutConnector, mainStreetGapConnector]);
+  .concat([georgeRoundaboutConnector, mainStreetGapConnector], handDigitizedStreets);
 
 // Overlapping Overpass bbox queries legitimately return the same way twice
 // when it crosses both boxes (e.g. East Road spans the original and north

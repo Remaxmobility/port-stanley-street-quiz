@@ -1,47 +1,5 @@
 [
   {
-    "id": "1st-street",
-    "name": "1st Street",
-    "geometry": [
-      [
-        42.66249,
-        -81.2169873
-      ],
-      [
-        42.6623929,
-        -81.2169882
-      ],
-      [
-        42.6623771,
-        -81.2169884
-      ],
-      [
-        42.6617802,
-        -81.2169998
-      ],
-      [
-        42.6617533,
-        -81.2170606
-      ],
-      [
-        42.6617555,
-        -81.2172698
-      ],
-      [
-        42.6617669,
-        -81.2177836
-      ],
-      [
-        42.6617953,
-        -81.2188407
-      ]
-    ],
-    "highwayClass": "residential",
-    "lengthMeters": 230,
-    "obscurityWeight": 3,
-    "points": 30
-  },
-  {
     "id": "2nd-street",
     "name": "2nd Street",
     "geometry": [
@@ -298,52 +256,6 @@
     "points": 40
   },
   {
-    "id": "bostwick-street",
-    "name": "Bostwick Street",
-    "geometry": [
-      [
-        42.6656734,
-        -81.2131934
-      ],
-      [
-        42.6657795,
-        -81.2132289
-      ],
-      [
-        42.6660359,
-        -81.2133146
-      ],
-      [
-        42.666061,
-        -81.2133229
-      ],
-      [
-        42.6662403,
-        -81.2133829
-      ],
-      [
-        42.6663268,
-        -81.2134118
-      ],
-      [
-        42.6665033,
-        -81.2134708
-      ],
-      [
-        42.6669021,
-        -81.2135855
-      ],
-      [
-        42.6673878,
-        -81.2137489
-      ]
-    ],
-    "highwayClass": "residential",
-    "lengthMeters": 196,
-    "obscurityWeight": 3,
-    "points": 30
-  },
-  {
     "id": "brayside-street",
     "name": "Brayside Street",
     "geometry": [
@@ -424,6 +336,50 @@
     "lengthMeters": 395,
     "obscurityWeight": 3,
     "points": 30
+  },
+  {
+    "id": "breakwater-blvd",
+    "name": "Breakwater Blvd",
+    "geometry": [
+      [
+        42.66562,
+        -81.22533
+      ],
+      [
+        42.6663,
+        -81.22511
+      ],
+      [
+        42.66727,
+        -81.22496
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 186,
+    "obscurityWeight": 3,
+    "points": 30
+  },
+  {
+    "id": "briar-hill-street",
+    "name": "Briar Hill Street",
+    "geometry": [
+      [
+        42.66611,
+        -81.2168
+      ],
+      [
+        42.66627,
+        -81.21622
+      ],
+      [
+        42.66629,
+        -81.2161
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 61,
+    "obscurityWeight": 4,
+    "points": 40
   },
   {
     "id": "bridge-street-1",
@@ -822,6 +778,52 @@
     "lengthMeters": 10,
     "obscurityWeight": 1,
     "points": 10
+  },
+  {
+    "id": "colonel-bostwick-street",
+    "name": "Colonel Bostwick Street",
+    "geometry": [
+      [
+        42.6656734,
+        -81.2131934
+      ],
+      [
+        42.6657795,
+        -81.2132289
+      ],
+      [
+        42.6660359,
+        -81.2133146
+      ],
+      [
+        42.666061,
+        -81.2133229
+      ],
+      [
+        42.6662403,
+        -81.2133829
+      ],
+      [
+        42.6663268,
+        -81.2134118
+      ],
+      [
+        42.6665033,
+        -81.2134708
+      ],
+      [
+        42.6669021,
+        -81.2135855
+      ],
+      [
+        42.6673878,
+        -81.2137489
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 196,
+    "obscurityWeight": 3,
+    "points": 30
   },
   {
     "id": "compass-trail",
@@ -1642,6 +1644,48 @@
     "points": 30
   },
   {
+    "id": "first-street",
+    "name": "First Street",
+    "geometry": [
+      [
+        42.66249,
+        -81.2169873
+      ],
+      [
+        42.6623929,
+        -81.2169882
+      ],
+      [
+        42.6623771,
+        -81.2169884
+      ],
+      [
+        42.6617802,
+        -81.2169998
+      ],
+      [
+        42.6617533,
+        -81.2170606
+      ],
+      [
+        42.6617555,
+        -81.2172698
+      ],
+      [
+        42.6617669,
+        -81.2177836
+      ],
+      [
+        42.6617953,
+        -81.2188407
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 230,
+    "obscurityWeight": 3,
+    "points": 30
+  },
+  {
     "id": "frances-street",
     "name": "Frances Street",
     "geometry": [
@@ -2088,6 +2132,24 @@
     "lengthMeters": 2474,
     "obscurityWeight": 2,
     "points": 20
+  },
+  {
+    "id": "harbour-way",
+    "name": "Harbour Way",
+    "geometry": [
+      [
+        42.66659,
+        -81.22353
+      ],
+      [
+        42.66629,
+        -81.22178
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 147,
+    "obscurityWeight": 4,
+    "points": 40
   },
   {
     "id": "harrison-place",
@@ -2602,96 +2664,6 @@
     "points": 40
   },
   {
-    "id": "lower-spring-street",
-    "name": "Lower Spring Street",
-    "geometry": [
-      [
-        42.66455,
-        -81.22903
-      ],
-      [
-        42.66448,
-        -81.22896
-      ],
-      [
-        42.66437,
-        -81.22897
-      ],
-      [
-        42.66423,
-        -81.22902
-      ],
-      [
-        42.66415,
-        -81.22913
-      ],
-      [
-        42.6641,
-        -81.22933
-      ],
-      [
-        42.66405,
-        -81.22968
-      ],
-      [
-        42.66392,
-        -81.23016
-      ],
-      [
-        42.66388,
-        -81.23033
-      ],
-      [
-        42.66383,
-        -81.23041
-      ],
-      [
-        42.66368,
-        -81.23049
-      ],
-      [
-        42.66351,
-        -81.23057
-      ],
-      [
-        42.66345,
-        -81.23067
-      ],
-      [
-        42.66345,
-        -81.2308
-      ],
-      [
-        42.66348,
-        -81.23101
-      ],
-      [
-        42.66357,
-        -81.23109
-      ],
-      [
-        42.6635353,
-        -81.2313192
-      ],
-      [
-        42.66354,
-        -81.2316
-      ],
-      [
-        42.6635495,
-        -81.2319658
-      ],
-      [
-        42.6635602,
-        -81.2323809
-      ]
-    ],
-    "highwayClass": "residential",
-    "lengthMeters": 357,
-    "obscurityWeight": 3,
-    "points": 30
-  },
-  {
     "id": "main-street-1",
     "name": "Main Street",
     "geometry": [
@@ -2896,6 +2868,60 @@
     "lengthMeters": 306,
     "obscurityWeight": 3,
     "points": 30
+  },
+  {
+    "id": "mcclary-ave",
+    "name": "McClary Ave",
+    "geometry": [
+      [
+        42.66499,
+        -81.19996
+      ],
+      [
+        42.66449,
+        -81.19997
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 56,
+    "obscurityWeight": 4,
+    "points": 40
+  },
+  {
+    "id": "mckenzie-lane",
+    "name": "McKenzie Lane",
+    "geometry": [
+      [
+        42.66484,
+        -81.23524
+      ],
+      [
+        42.66434,
+        -81.23524
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 56,
+    "obscurityWeight": 4,
+    "points": 40
+  },
+  {
+    "id": "meek-st",
+    "name": "Meek St",
+    "geometry": [
+      [
+        42.6647,
+        -81.23329
+      ],
+      [
+        42.6639,
+        -81.2336
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 92,
+    "obscurityWeight": 4,
+    "points": 40
   },
   {
     "id": "mitchell-street",
@@ -3166,6 +3192,24 @@
     "points": 40
   },
   {
+    "id": "regatta-way",
+    "name": "Regatta Way",
+    "geometry": [
+      [
+        42.6663,
+        -81.22511
+      ],
+      [
+        42.66603,
+        -81.22309
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 168,
+    "obscurityWeight": 3,
+    "points": 30
+  },
+  {
     "id": "river-road",
     "name": "River Road",
     "geometry": [
@@ -3194,6 +3238,50 @@
     "lengthMeters": 84,
     "obscurityWeight": 4,
     "points": 40
+  },
+  {
+    "id": "sailor-s-alley",
+    "name": "Sailor's Alley",
+    "geometry": [
+      [
+        42.66628,
+        -81.21381
+      ],
+      [
+        42.66633,
+        -81.21345
+      ],
+      [
+        42.66638,
+        -81.21336
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 39,
+    "obscurityWeight": 4,
+    "points": 40
+  },
+  {
+    "id": "sandcastle-key",
+    "name": "Sandcastle Key",
+    "geometry": [
+      [
+        42.66727,
+        -81.22496
+      ],
+      [
+        42.66659,
+        -81.22353
+      ],
+      [
+        42.66524,
+        -81.22289
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 298,
+    "obscurityWeight": 3,
+    "points": 30
   },
   {
     "id": "selbourne-drive",
@@ -3356,46 +3444,108 @@
     "name": "Spring Street",
     "geometry": [
       [
-        42.6639225,
-        -81.2357745
+        42.66455,
+        -81.22903
       ],
       [
-        42.6639048,
-        -81.2352315
+        42.66448,
+        -81.22896
       ],
       [
-        42.6638971,
-        -81.2349934
+        42.66437,
+        -81.22897
       ],
       [
-        42.6638715,
-        -81.2346821
+        42.66423,
+        -81.22902
       ],
       [
-        42.6638475,
-        -81.2343897
+        42.66415,
+        -81.22913
       ],
       [
-        42.6637941,
-        -81.2337401
+        42.6641,
+        -81.22933
       ],
       [
-        42.6637477,
-        -81.2331747
+        42.66405,
+        -81.22968
       ],
       [
-        42.6637839,
-        -81.233065
+        42.66392,
+        -81.23016
       ],
       [
-        42.6638089,
-        -81.23305
+        42.66388,
+        -81.23033
+      ],
+      [
+        42.66383,
+        -81.23041
+      ],
+      [
+        42.66368,
+        -81.23049
+      ],
+      [
+        42.66351,
+        -81.23057
+      ],
+      [
+        42.66345,
+        -81.23067
+      ],
+      [
+        42.66345,
+        -81.2308
+      ],
+      [
+        42.66348,
+        -81.23101
+      ],
+      [
+        42.66357,
+        -81.23109
+      ],
+      [
+        42.6635353,
+        -81.2313192
+      ],
+      [
+        42.66354,
+        -81.2316
+      ],
+      [
+        42.6635495,
+        -81.2319658
+      ],
+      [
+        42.6635602,
+        -81.2323809
       ]
     ],
     "highwayClass": "residential",
-    "lengthMeters": 226,
+    "lengthMeters": 357,
     "obscurityWeight": 3,
     "points": 30
+  },
+  {
+    "id": "spruce-st",
+    "name": "Spruce St",
+    "geometry": [
+      [
+        42.66631,
+        -81.19904
+      ],
+      [
+        42.66574,
+        -81.19904
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 63,
+    "obscurityWeight": 4,
+    "points": 40
   },
   {
     "id": "stanley-park-drive",
@@ -3508,6 +3658,36 @@
     "points": 30
   },
   {
+    "id": "the-prom",
+    "name": "The Prom",
+    "geometry": [
+      [
+        42.6663,
+        -81.22511
+      ],
+      [
+        42.66682,
+        -81.22643
+      ],
+      [
+        42.66787,
+        -81.22522
+      ],
+      [
+        42.66765,
+        -81.22466
+      ],
+      [
+        42.66727,
+        -81.22496
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 376,
+    "obscurityWeight": 3,
+    "points": 30
+  },
+  {
     "id": "tower-heights-drive",
     "name": "Tower Heights Drive",
     "geometry": [
@@ -3534,6 +3714,52 @@
     ],
     "highwayClass": "residential",
     "lengthMeters": 252,
+    "obscurityWeight": 3,
+    "points": 30
+  },
+  {
+    "id": "upper-spring-street",
+    "name": "Upper Spring Street",
+    "geometry": [
+      [
+        42.6639225,
+        -81.2357745
+      ],
+      [
+        42.6639048,
+        -81.2352315
+      ],
+      [
+        42.6638971,
+        -81.2349934
+      ],
+      [
+        42.6638715,
+        -81.2346821
+      ],
+      [
+        42.6638475,
+        -81.2343897
+      ],
+      [
+        42.6637941,
+        -81.2337401
+      ],
+      [
+        42.6637477,
+        -81.2331747
+      ],
+      [
+        42.6637839,
+        -81.233065
+      ],
+      [
+        42.6638089,
+        -81.23305
+      ]
+    ],
+    "highwayClass": "residential",
+    "lengthMeters": 226,
     "obscurityWeight": 3,
     "points": 30
   },
