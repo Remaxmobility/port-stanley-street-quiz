@@ -51,6 +51,8 @@ const rawWithDupes = [
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_residential.json'))),
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_west.json'))),
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_north.json'))),
+  ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_far_west.json'))),
+  ...JSON.parse(fs.readFileSync(path.join(__dirname, 'raw_far_north.json'))),
 ]
   .filter(way => !excludeWayIds.has(way.id))
   .map(way => wayNameOverrides[way.id] ? { ...way, name: wayNameOverrides[way.id] } : way)
@@ -178,3 +180,15 @@ streets.sort((a, b) => a.name.localeCompare(b.name));
 fs.writeFileSync(path.join(__dirname, 'streets.json'), JSON.stringify(streets, null, 2));
 console.log(`Wrote ${streets.length} streets to streets.json`);
 console.log('Weight distribution:', streets.reduce((acc, s) => { acc[s.obscurityWeight] = (acc[s.obscurityWeight] || 0) + 1; return acc; }, {}));
+
+// Separate from the quiz list: every individual deduped raw way's geometry,
+// unchained and untouched by the loop-dropping step above. That step drops
+// tiny cul-de-sac turnaround loops as redundant *quiz* entries, but the
+// pavement is still real — a road-outline layer drawn only from streets[]
+// would show gaps at every dropped loop and every place chainSegments
+// couldn't resolve a branch. This is for drawing the road network, not for
+// gameplay, so raw individual segments (rather than merged per-name chains)
+// are exactly what's needed.
+const roadSegments = raw.map(way => way.geometry);
+fs.writeFileSync(path.join(__dirname, 'road_segments.json'), JSON.stringify(roadSegments));
+console.log(`Wrote ${roadSegments.length} road segments to road_segments.json`);

@@ -8,8 +8,9 @@ applied street-name corrections from local knowledge, then compared the full
 street list against Google Maps (via Claude in Chrome) and expanded the OSM
 pull to cover two neighborhoods the original bbox had cut off.
 
-**Status: v1 playable and browser-verified, dataset expanded to 87 streets**
-(was 57). Open `index.html` directly, no server needed. Steps 7 (PWA export)
+**Status: v1 playable and deployed. Dataset now 82 records / 75 unique
+names.** Live on GitHub (`github.com/Remaxmobility/port-stanley-street-quiz`,
+public) with Vercel connected for auto-deploy on push. Steps 7 (PWA export)
 and 8 (leaderboard/difficulty modes) not started — plan explicitly marks
 those as later/future phases.
 
@@ -48,29 +49,48 @@ every quadrant of town (Claude in Chrome). Findings:
   score match, no regressions.
 
 ## Files changed / created
-- `index.html` — full single-file game: Leaflet map (CartoDB dark, no labels),
-  glass-panel HUD (score, strikes, prompt banner), tap-to-guess, hit/miss
-  toast, end-screen breakdown, Play Again. Loads `game-engine.js` and
-  `data/streets_inline.js`.
+(Counts below are as of session 4; superseded by "Status" at the top of
+this doc if that's been updated more recently.)
+- `index.html` — full single-file game: Leaflet map (CartoDB **light**, no
+  labels — switched from dark in session 4 for outdoor daylight
+  readability), a hand-drawn grey/dark-cased road-outline overlay (see
+  session 4), glass-panel HUD (score, strikes, prompt banner), dismissible
+  pinch/tap onboarding hint, tap-to-guess, hit/miss toast, end-screen
+  breakdown, Play Again. Loads `game-engine.js`, `data/streets_inline.js`,
+  and `data/roads_inline.js`.
 - `game-engine.js` — pure state-machine (init/submitGuess/nextRound), correct
   point-to-segment distance-to-line hit test. Claude-written after the local
   LLM's draft was rejected (see Key decisions).
-- `data/build_streets.js` — merges raw OSM ways into `streets.json`: chains
-  segments sharing endpoints into one polyline per street name, computes
-  length, seeds `obscurityWeight` via plan §3.3 formula, applies
-  `manualWeight` and `nameOverrides` maps (both hand-maintained, see below).
+- `data/build_streets.js` — merges raw OSM ways into `streets.json` (the
+  quiz dataset) AND `road_segments.json` (every individual deduped raw way,
+  for visual display only — see session 4): chains segments sharing
+  endpoints into one polyline per street name, computes length, seeds
+  `obscurityWeight` via plan §3.3 formula, applies `manualWeight`,
+  `nameOverrides`, `wayNameOverrides`, and `excludeWayIds` maps (all
+  hand-maintained, see Key decisions below).
 - `data/raw_main.json`, `data/raw_residential.json` — raw Overpass API pulls
   (primary/secondary/tertiary/unclassified, and residential, respectively)
   for the original Port Stanley bbox. Source of truth; never hand-edited.
 - `data/raw_west.json`, `data/raw_north.json` — session-2 pulls covering the
   two neighborhoods the original bbox missed (Mitchell Heights and the
-  north end). Same rules: source of truth, never hand-edited.
-- `data/streets.json` — build output, 87 street records (71 unique names).
-- `data/streets_inline.js` — `streets.json` wrapped as `const STREET_DATA = [...]`
-  for direct `<script>` embedding (avoids `fetch()`/CORS issues on `file://`).
-  **Must be regenerated any time `streets.json` changes** — see Next steps.
+  north end).
+- `data/raw_far_west.json`, `data/raw_far_north.json` — session-4 pulls:
+  George Street's real western extent (+ Walter St, Edith St), and a
+  subdivision north of the original data (Larry St, Emery St, Beamish St).
+  All raw files: source of truth, never hand-edited.
+- `data/streets.json` — build output, the curated **quiz** dataset (82
+  street records, 75 unique names as of session 4).
+- `data/road_segments.json` — build output, **every** individual deduped
+  raw way's geometry (unnamed array of coordinate arrays) — for the visual
+  road-outline layer, not gameplay. Session 4 addition.
+- `data/streets_inline.js` / `data/roads_inline.js` — `streets.json` /
+  `road_segments.json` wrapped as `const STREET_DATA = [...]` /
+  `const ROAD_SEGMENTS = [...]` for direct `<script>` embedding (avoids
+  `fetch()`/CORS issues on `file://`). **Both must be regenerated any time
+  `streets.json`/`road_segments.json` change** — see Next steps.
 - `data/test_engine.js` — 21 node-run unit tests for `game-engine.js`
   (distance math, tolerance table, purity, strike/gameover transitions).
+- `.gitignore` — excludes `.claude/` (session 4, before first git push).
 
 ## Key decisions
 - **Overpass API is reachable via `WebFetch` but not via `Bash`/`curl`** in
@@ -269,37 +289,127 @@ extent/connectivity facts, not chaining bugs:
   point. Verified with the same self-loop/duplicate-id re-scan as before —
   clean. Count unchanged: 77 records, 70 unique names.
 
+## Session 4 — deployed to GitHub/Vercel, UI contrast fix, more street gaps
+Jason asked to put the project on his GitHub and deploy via Vercel.
+- Pushed to `github.com/Remaxmobility/port-stanley-street-quiz` (public repo,
+  under the Remaxmobility gh account — matches his configured git identity,
+  `gho auth switch` was needed since `luxuryfurnishedrentals` was gh's
+  active account). `.gitignore` excludes `.claude/`.
+- Vercel CLI wasn't installed and `vercel login` needs an interactive
+  browser flow this sandbox can't complete — Jason imported the repo via
+  the Vercel dashboard instead (vercel.com/new -> Import -> Deploy, auto-
+  detected as a static site, no build config needed). Auto-deploys on
+  every push to `master` from here on.
+
+**Contrast complaint** ("too dark on my phone"): the whole game was on a
+dark theme (dark tiles + dark UI), which reads badly outdoors in daylight —
+which is when this game actually gets played. Switched the base map tiles
+from CartoDB `dark_nolabels` to `light_nolabels`; kept the dark glass HUD
+panels, which now have strong contrast against the lighter map instead of
+blending into a dark one. Also added a dismissible "Pinch to zoom · Tap to
+select" onboarding hint (found and fixed a bug where it was dismissing
+itself instantly — Leaflet fires its own zoom/pan events during startup
+bounds-snapping, which was triggering the same listener meant for the
+player's first real tap).
+
+**Road visibility complaint** ("road borders could be darker, make roads
+grey"): the base tiles' own road rendering is too pale to fix with CSS
+filters — tried several combinations (`contrast`, `brightness`,
+`grayscale`), all either did nothing or blew the pale roads out to solid
+white, because the source pixels don't have enough tonal separation for a
+filter to manufacture real contrast from (filters can only stretch
+*existing* contrast). Switched approach entirely: draw the road network
+ourselves as Leaflet polylines (dark slate casing line under a grey fill
+line, same technique real map renderers use), with `interactive: false` so
+taps still pass through to the map's own tap-to-guess handler.
+
+Drawing that overlay surfaced a real bug: it was built from `STREET_DATA`
+(the curated 77-street quiz list), which deliberately excludes things like
+the small cul-de-sac turnaround loops dropped earlier as redundant *quiz*
+entries — the pavement is still real, just not a separate quiz record
+anymore, so those loops rendered as gaps in an otherwise-grey network.
+Fixed by adding a second, separate output from `build_streets.js`:
+`road_segments.json` / `data/roads_inline.js` (`ROAD_SEGMENTS`), which is
+every individual deduped raw way's geometry, unchained and un-filtered by
+the loop-dropping logic — built for drawing the road network, not for
+gameplay. `index.html` now loads both `STREET_DATA` (for `GameEngine`) and
+`ROAD_SEGMENTS` (for the visual overlay) as separate scripts.
+
+**More real gaps found while checking that fix**, confirmed via Overpass
+and added:
+- **George Street's real extent is much longer than we had** — it
+  continues west along the shoreline past Mitchell Heights all the way to
+  `[42.6647932,-81.2439557]` (confirmed as the true OSM terminus by
+  re-querying an even wider bbox and getting the same single way back).
+  Picked up two real cross streets along the way: **Walter Street** and
+  **Edith Street** (`data/raw_far_west.json`).
+- **Larry Street, Emery Street, Beamish Street** — a whole subdivision
+  north of the existing data, off Hill Street/Sunset Road near the Port
+  Stanley Water Tower. Found by retrying a Google Maps search for "Emery"
+  that had originally appeared to return nothing (it just resolved slower
+  than expected — worth waiting longer or re-checking a tab instead of
+  concluding "not found" too quickly). All three connect cleanly: Beamish
+  St's start node is an exact match for Hill Street's existing endpoint
+  (`data/raw_far_north.json`).
+- Deliberately **left out** two things found in the same Overpass pull to
+  avoid scope creep beyond what was asked: a further extension of East
+  Road and new segments of Sunset Road/Dexter Line that run well out into
+  rural territory (Dexter Line reaches over 3km east, clearly a county
+  road, not a Port Stanley street). Can revisit if Jason wants the game's
+  area pushed that far out — see plan §8's "whole town vs core" question.
+- **Sandcastle Key** confirmed absent from OSM entirely (same as the
+  earlier Prom/Breakwater/Regatta/Harbour/Meek/Upper Spring cluster) —
+  added to the known-gap list below, not fabricated.
+- Map `BOUNDS`/`CENTER` in `index.html` widened again to fit the larger
+  extent (lat now up to ~42.680, lon down to ~-81.244).
+
+Full data-quality re-scan (self-loops, duplicate ids, graph-cycle check
+across every street name) run again after all of this — clean. Engine
+tests still pass. Count: 82 records, 75 unique names.
+
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
   but the specific correct extent hasn't been provided yet. Ask him for
   the same kind of fact as the Bridge St fix (e.g. "Oak St runs between X
   and Y") next session.
-- Otherwise none known-broken. 77 streets (70 unique names) is the full
+- Otherwise none known-broken. 82 streets (75 unique names) is the full
   set, re-scanned clean (self-loops, duplicate ids, graph cycles) as of
   the last full sweep.
-- Six streets confirmed real (visible on Google Maps) but absent from OSM
-  entirely — see "Known OSM coverage gaps" above. Not in the quiz yet.
+- Seven streets confirmed real (visible on Google Maps) but absent from
+  OSM entirely — The Prom, Breakwater Blvd, Regatta Way, Harbour Way,
+  Meek St, Upper Spring St, Spruce St, **plus Sandcastle Key** (session 4).
+  Not in the quiz yet — would need hand-digitized geometry.
 - Unresolved: Hillcrest Dr vs Franklin Drive naming (kept as Franklin Drive
-  per Jason's call this session, but Google Maps still disagrees — worth a
-  sign-check next time he's in the area).
+  per Jason's call, but Google Maps still disagrees — worth a sign-check
+  next time he's in the area).
+- East Road/Sunset Road/Dexter Line's further rural extensions were found
+  but deliberately not added (see session 4) — revisit if the game's
+  intended area should reach that far out.
 
 ## Next steps
 1. **If any `data/raw_*.json` file is ever re-pulled from Overpass, or
-   `build_streets.js` is edited**: re-run `node data/build_streets.js`, then
-   regenerate the inline file:
+   `build_streets.js` is edited**: re-run `node data/build_streets.js` (now
+   writes both `streets.json` AND `road_segments.json`), then regenerate
+   BOTH inline files:
    ```
-   node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('data/streets.json'));fs.writeFileSync('data/streets_inline.js','const STREET_DATA = ' + JSON.stringify(s) + ';');"
+   node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('data/streets.json'));fs.writeFileSync('data/streets_inline.js','const STREET_DATA = ' + JSON.stringify(s) + ';');const r=JSON.parse(fs.readFileSync('data/road_segments.json'));fs.writeFileSync('data/roads_inline.js','const ROAD_SEGMENTS = ' + JSON.stringify(r) + ';');"
    ```
-   then `node data/test_engine.js` to confirm the engine still passes.
-2. Jason to review the full 71-name street list for any further corrections
-   (found and fixed so far: Hillcrest->Franklin, Fairview/Fernie folded into
-   Brayside). Add any more to `nameOverrides` in `build_streets.js`.
-3. Decide whether to hand-digitize the six OSM-absent streets (The Prom,
+   then `node data/test_engine.js` to confirm the engine still passes. If
+   the new data changes the lat/lon extent, also check/update `BOUNDS` and
+   `CENTER` in `index.html` — this has been missed and caught late twice
+   now (session 3 and 4 both needed a bounds fix after a data expansion).
+2. Get the Oak Street correction from Jason (see Pending issues).
+3. Jason to review the full 75-name street list for any further
+   corrections (found and fixed so far: Hillcrest->Franklin,
+   Fairview/Fernie->Brayside, Victoria->Harrison Place, Bridge St's west
+   stub->George Street). Add any more to `nameOverrides`/`wayNameOverrides`
+   in `build_streets.js`.
+4. Decide whether to hand-digitize the seven OSM-absent streets (The Prom,
    Breakwater Blvd, Regatta Way, Harbour Way, Meek St, Upper Spring St,
-   Spruce St — estimate geometry from Google Maps satellite/road view,
-   add as a manually-authored raw JSON file since Overpass has nothing to
-   pull).
-4. Open questions from the plan (§8), still unanswered:
+   Spruce St, Sandcastle Key — estimate geometry from Google Maps
+   satellite/road view, add as a manually-authored raw JSON file since
+   Overpass has nothing to pull).
+5. Open questions from the plan (§8), still unanswered:
    - Point spread: keep 10/20/30/40 (obscurity x1-4) or go steeper?
    - Whole town in-bounds, or core-only? This got more pointed this
      session — the north cluster (Hill St, High St, Gentry Lane, Compass
@@ -308,6 +418,6 @@ extent/connectivity facts, not chaining bugs:
      approved including it, but worth confirming it still feels like
      "Port Stanley" gameplay-wise once he's played it.
    - Any streets to exclude entirely (private lanes, unnamed access roads)?
-5. Once gameplay/data are locked in: step 7 (manifest.json + service worker
+6. Once gameplay/data are locked in: step 7 (manifest.json + service worker
    for installable PWA) and step 8 (leaderboard, difficulty select, other
    towns) per plan — both explicitly deferred, not started.

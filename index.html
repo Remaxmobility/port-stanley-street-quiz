@@ -232,11 +232,12 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="data/streets_inline.js"></script>
+<script src="data/roads_inline.js"></script>
 <script src="game-engine.js"></script>
 <script>
 (function () {
-  const BOUNDS = L.latLngBounds([42.6575, -81.2360], [42.6800, -81.1975]);
-  const CENTER = [42.6687, -81.2167];
+  const BOUNDS = L.latLngBounds([42.6575, -81.2445], [42.6815, -81.1975]);
+  const CENTER = [42.6694, -81.2214];
 
   const map = L.map('map', {
     center: CENTER,
@@ -253,6 +254,31 @@
     subdomains: 'abcd',
     maxZoom: 20,
   }).addTo(map);
+
+  // The base tiles' own road rendering is too pale to read outdoors (their
+  // casing color isn't dark enough for any CSS filter to fix — filters can
+  // only stretch existing contrast, not invent it). Draw the road network
+  // ourselves instead: a dark casing line under a grey fill line, same
+  // technique real map renderers use for road outlines.
+  //
+  // Drawn from ROAD_SEGMENTS (every individual raw OSM way), NOT from
+  // STREET_DATA (the curated quiz list) — STREET_DATA deliberately drops
+  // things like small cul-de-sac turnaround loops as redundant quiz
+  // entries, but that pavement is still real. Drawing only STREET_DATA
+  // left visible gaps at every dropped loop and unresolved branch.
+  const roadsLayer = L.layerGroup().addTo(map);
+  ROAD_SEGMENTS.forEach(geometry => {
+    L.polyline(geometry, {
+      color: '#3d4451', weight: 7, opacity: 0.9,
+      lineCap: 'round', lineJoin: 'round', interactive: false,
+    }).addTo(roadsLayer);
+  });
+  ROAD_SEGMENTS.forEach(geometry => {
+    L.polyline(geometry, {
+      color: '#9aa5b1', weight: 4, opacity: 1,
+      lineCap: 'round', lineJoin: 'round', interactive: false,
+    }).addTo(roadsLayer);
+  });
 
   let state = GameEngine.init(STREET_DATA);
   let feedbackLayer = L.layerGroup().addTo(map);
