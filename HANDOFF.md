@@ -8,13 +8,14 @@ applied street-name corrections from local knowledge, then compared the full
 street list against Google Maps (via Claude in Chrome) and expanded the OSM
 pull to cover two neighborhoods the original bbox had cut off.
 
-**Status: v1 playable and deployed. Dataset now 76 records / 71 unique
-names** (session 5 merged several mistagged/split streets down from the
-82/75 count — see below; this is name-correction consolidation, not lost
-coverage). Live on GitHub (`github.com/Remaxmobility/port-stanley-street-quiz`,
-public) with Vercel connected for auto-deploy on push. Steps 7 (PWA export)
-and 8 (leaderboard/difficulty modes) not started — plan explicitly marks
-those as later/future phases.
+**Status: v1 playable and deployed. Dataset now 87 records / 82 unique
+names** (session 5 consolidated several mistagged/split streets down to
+76/71, then session 6 added 11 previously-missing streets found via a full
+Google Maps audit — see below). Live on GitHub
+(`github.com/Remaxmobility/port-stanley-street-quiz`, public) with Vercel
+connected for auto-deploy on push. Steps 7 (PWA export) and 8
+(leaderboard/difficulty modes) not started — plan explicitly marks those as
+later/future phases.
 
 ## Session 2 — Google Maps comparison and dataset expansion
 Compared the 57-street list against Google Maps by driving Chrome across
@@ -51,16 +52,19 @@ every quadrant of town (Claude in Chrome). Findings:
   score match, no regressions.
 
 ## Files changed / created
-(Counts below are as of session 5; superseded by "Status" at the top of
+(Counts below are as of session 6; superseded by "Status" at the top of
 this doc if that's been updated more recently.)
 - `index.html` — full single-file game: Leaflet map (CartoDB **light**, no
   labels — switched from dark in session 4 for outdoor daylight
   readability), a hand-drawn grey/dark-cased road-outline overlay (see
   session 4), glass-panel HUD (score, strikes, prompt banner), dismissible
   pinch/tap onboarding hint, tap-to-guess, hit/miss toast, end-screen
-  breakdown, Play Again, and (session 5) a "Label streets" debug/learn
-  toggle plus a `window.__psTest` hook for scripted backtesting. Loads
-  `game-engine.js`, `data/streets_inline.js`, and `data/roads_inline.js`.
+  breakdown, Play Again, a "Label streets" debug/learn toggle plus a
+  `window.__psTest` hook for scripted backtesting (session 5), and
+  (session 5) a miss-reveal that flies to the correct street and holds
+  until a real user gesture (drag/wheel/pinch/double-click — not a fixed
+  timer) instead of the old auto-advance. Loads `game-engine.js`,
+  `data/streets_inline.js`, and `data/roads_inline.js`.
 - `game-engine.js` — pure state-machine (init/submitGuess/nextRound), correct
   point-to-segment distance-to-line hit test. Claude-written after the local
   LLM's draft was rejected (see Key decisions).
@@ -81,8 +85,8 @@ this doc if that's been updated more recently.)
   George Street's real western extent (+ Walter St, Edith St), and a
   subdivision north of the original data (Larry St, Emery St, Beamish St).
   All raw files: source of truth, never hand-edited.
-- `data/streets.json` — build output, the curated **quiz** dataset (76
-  street records, 71 unique names as of session 5).
+- `data/streets.json` — build output, the curated **quiz** dataset (87
+  street records, 82 unique names as of session 6).
 - `data/road_segments.json` — build output, **every** individual deduped
   raw way's geometry (unnamed array of coordinate arrays) — for the visual
   road-outline layer, not gameplay. Session 4 addition.
@@ -471,33 +475,148 @@ being committed — all green throughout. Two commits pushed this session
 Main St+Vimy Ridge). Count went 82/75 -> 76/71 (all consolidation of
 mistagged splits, not lost real streets).
 
+## Session 5 continued — two more direct corrections, then a full Google Maps audit
+Same session, after the write-up above: Jason gave two more direct
+corrections (same "verify exact/near-exact shared coordinate before
+applying" method as everything else): **Maple Street -> Vimy Ridge**
+(start node exact match with Vimy Ridge's end node) and, in response to a
+report that "George street... runs past the roundabout and all the way to
+william," a **Spring/Lower Spring swap**: the OSM-tagged "Lower Spring
+Street" chain already ran exactly Valley St -> (through Bartholemew St's
+junction as an interior point) -> its own end, matching what Jason
+described as the real "Spring Street." The OSM-tagged "Spring Street" was a
+geographically separate road ~2km further west — renamed to "Upper Spring
+Street" (one of the streets previously thought entirely absent from OSM;
+turned out to just be mistagged). `nameOverrides`: `'Lower Spring Street':
+'Spring Street'`, `'Spring Street': 'Upper Spring Street'`. (Also checked
+Colborne St's extent against coordinates Jason gave — already correct,
+no change needed; not every report is a bug.)
+
+Also added a real UX feature: on a MISS, the map now flies to the missed
+street's real location (bounds extended to include the guess point, for
+"how far off was I" context) and shows a "pan or zoom to continue" hint,
+holding indefinitely until the player makes a real gesture — no fixed
+timer. Hits still auto-advance at 700ms, unaffected. The tricky part:
+Leaflet's own `movestart`/`moveend` couldn't be used to detect "the user
+moved it" — this map's `maxBounds`+`maxBoundsViscosity` fires its own extra
+movestart/moveend correction cycles after the reveal's own `flyToBounds`,
+which look identical to a real user gesture (confirmed by browser testing:
+the reveal auto-advanced within ~1.5s with zero interaction using the first
+implementation). Fixed by listening for raw DOM/Leaflet events that are
+*only* ever fired by real input — `dragstart`, `wheel`, `dblclick`, and
+multi-touch `touchmove` (pinch) — never by any programmatic map call.
+Verified via `claude-in-chrome`: a real drag/wheel advances correctly, 3
+seconds of no interaction does not, and a gameover-triggering miss still
+reveals-and-waits before showing the end screen.
+
+Then Jason asked for a full comparison against Google Maps. Split the
+76-street list into 4 geographic bands (west/Mitchell Heights, downtown
+core, north/east-core, east+north-rural-edge) and ran 4 parallel
+research-only agents (no file edits), each driving `claude-in-chrome`
+against Google Maps for its band, checking name + rough extent per street
+and watching for anything Google shows that isn't in our data. Findings,
+after manually filtering out band-boundary false-positives (an agent
+flagging a street as "missing" just because it wasn't in *that agent's*
+assigned list, when it's actually correctly present elsewhere in the full
+76-street set — this happened for Main St, George St, Charlotte St,
+Frances St, Charles St, Front St; not real gaps):
+- **Genuine new conflict**: Google Maps still labels the road we just
+  renamed to "Spring Street" as **"Lower Spring St"**, with Google's own
+  "Spring St" label sitting ~80-100m away near Bartholemew St — directly
+  contradicting Jason's fresh correction above. Presented to Jason
+  alongside the pre-existing Hillcrest/Franklin conflict; **his call: keep
+  both as originally corrected** (Spring Street = Valley->Bartholemew,
+  Franklin Drive) — Google is stale/wrong in both cases, direct
+  local knowledge wins. This is now the established policy for *future*
+  conflicts too: prefer Google's current data **except** where it
+  contradicts a direct correction Jason already gave from local knowledge.
+- **11 real streets confirmed on Google Maps, zero OSM coverage under any
+  tag** (added — see session 6 below for exact process): The Prom,
+  Breakwater Blvd, Regatta Way, Harbour Way, Sandcastle Key, Meek St,
+  McKenzie Lane (Mitchell Heights waterfront cluster), Sailor's Alley,
+  Briar Hill Street (downtown core), McClary Ave, Spruce St (east side).
+- **2 clean renames to match Google** (no prior local-knowledge override to
+  conflict with): Bostwick Street -> Colonel Bostwick Street, 1st Street ->
+  First Street.
+- Minor/not-worth-touching: numbered-street spelling is otherwise
+  consistent (2nd/3rd/4th match Google's numeral format, only "1st" itself
+  didn't); East Road may split into "East St"(south)/"East Rd"(north) on
+  Google with an unclear transition point, not investigated further; Edith
+  St/Walnut St/River Road couldn't be confirmed either way on Google
+  (short residential streets often aren't labeled at Google's own zoom
+  levels — inconclusive, not evidence of an error).
+
+## Session 6 — implementing the Google Maps audit findings
+Continuation of the same audit. Two more parallel research-only agents
+traced precise hand-digitizable geometry for the 11 confirmed-missing
+streets (right-click "copy coordinates" on Google Maps per point, with
+pixel-interpolation fallback where the right-click menu got flaky from
+concurrent-agent tab contention in the shared browser session — ~20-40m
+positional tolerance, fine for gameplay shape, not survey-grade). Then,
+directly in `build_streets.js`:
+- Added a `handDigitizedStreets` array (11 entries, each a synthetic "way"
+  object like the existing `georgeRoundaboutConnector`/
+  `mainStreetGapConnector`, but standalone quiz entries in their own right
+  rather than merging into an existing chain) — concatenated into the raw
+  way list alongside those two connectors.
+- `nameOverrides`: `'Bostwick Street': 'Colonel Bostwick Street'`,
+  `'1st Street': 'First Street'`.
+- Verified the new streets' lat/lon extent still sits inside `index.html`'s
+  existing `BOUNDS`/`CENTER` — no map viewport change needed this time.
+
+Rebuilt, regenerated both inline files, re-ran `test_engine.js` and
+`test_fuzz.js` (1931 checks) — all green. One commit pushed (`647ba69`).
+Count went 76/71 -> 87/82 (net new real coverage, not consolidation this
+time).
+
+## Session 7 — Jamieson/Orchard merge reverted
+Jason: "Jamieson and orchard need to be there the merge was wrong." Session
+5's Jamieson/Orchard -> Main Street merge (plus the hand-invented 146m
+gap-connector past Orchard's south end) was incorrect — reverted both:
+- Removed `'Jamieson Street': 'Main Street'` and `'Orchard Street': 'Main
+  Street'` from `nameOverrides` in `build_streets.js`.
+- Removed `mainStreetGapConnector` (the straight-line placeholder) entirely
+  — it only existed to bridge Main St through Orchard's old south end, no
+  longer needed with the merge gone.
+- Rebuilt: Jamieson Street (81m) and Orchard Street (124m) are separate
+  quiz entries again; Main Street back to its original 4 chains
+  (289m/48m/14m/71m). Regenerated both inline files, `test_engine.js` and
+  `test_fuzz.js` (1941 checks) both green. Count: 90 records, 83 unique
+  names.
+- No note on what the *correct* Jamieson/Orchard extent should be — this
+  was purely "undo the wrong merge," not a replacement correction. If
+  Jason has a specific fix in mind for either street, get it next session.
+
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
   but the specific correct extent hasn't been provided yet. Ask him for
   the same kind of fact as the Bridge St fix (e.g. "Oak St runs between X
   and Y") next session.
-- Otherwise none known-broken. 76 streets (71 unique names) is the full
-  set as of session 5's fixes; re-scanned clean (self-loops, duplicate ids,
-  graph cycles) as of the session-3/4 full sweep — **that graph-cycle sweep
-  has not been re-run since session 5's changes**, worth doing once more
+- Otherwise none known-broken. 87 streets (82 unique names) is the full
+  set as of session 6; re-scanned clean (self-loops, duplicate ids, graph
+  cycles) as of the session-3/4 full sweep — **that graph-cycle sweep has
+  not been re-run since session 5/6's changes**, worth doing once more
   corrections land rather than after every single one.
-- Seven streets confirmed real (visible on Google Maps) but absent from
-  OSM entirely — The Prom, Breakwater Blvd, Regatta Way, Harbour Way,
-  Meek St, Upper Spring St, Spruce St, **plus Sandcastle Key** (session 4).
-  Not in the quiz yet — would need hand-digitized geometry (same technique
-  now proven once, at small scale, by session 5's `mainStreetGapConnector`).
-- Unresolved: Hillcrest Dr vs Franklin Drive naming (kept as Franklin Drive
-  per Jason's call, but Google Maps still disagrees — worth a sign-check
-  next time he's in the area).
+- Unresolved (Jason's explicit call: keep local knowledge over Google in
+  both cases, see session 5 continued above):
+  - Hillcrest Dr vs Franklin Drive (kept Franklin Drive)
+  - Lower Spring St vs Spring St (kept Spring St = Valley->Bartholemew)
+- The 11 newly-added streets are hand-digitized placeholders (~20-40m
+  tolerance, 2-5 points each) — good enough for gameplay hit-testing given
+  the existing tolerance radii (20-45m), but worth a precision pass later
+  if Jason walks/drives them and can give exact corrections, same as any
+  other street.
 - East Road/Sunset Road/Dexter Line's further rural extensions were found
   but deliberately not added (see session 4) — revisit if the game's
-  intended area should reach that far out.
+  intended area should reach that far out. Possibly related: session 5's
+  audit flagged East Road may split into "East St"/"East Rd" on Google with
+  an unclear transition point — not investigated.
 - Worth a proactive check (per [[feedback_full_sweep_after_pattern_repeats]] —
-  this is now 5+ instances of the same "OSM split one real street into
-  multiple names" bug class across sessions 3-5): scan the full dataset for
+  this is now 6+ instances of the same "OSM split one real street into
+  multiple names" bug class across sessions 3-6): scan the full dataset for
   any other street whose name has unusually few/short chains for its
   apparent length, the same smell that led to the Colborne/Selbourne/
-  Frances/Merville/Main St/Vimy Ridge fixes.
+  Frances/Merville/Main St/Vimy Ridge/Spring St fixes.
 
 ## Next steps
 1. **If any `data/raw_*.json` file is ever re-pulled from Overpass, or
@@ -512,18 +631,22 @@ mistagged splits, not lost real streets).
    `CENTER` in `index.html` — this has been missed and caught late twice
    now (session 3 and 4 both needed a bounds fix after a data expansion).
 2. Get the Oak Street correction from Jason (see Pending issues).
-3. Jason to review the full 71-name street list for any further
+3. Jason to review the full 82-name street list for any further
    corrections (found and fixed so far: Hillcrest->Franklin,
    Fairview/Fernie->Brayside, Victoria->Harrison Place, Bridge St's west
    stub->George Street, Merville->Brayside, George St roundabout topology,
-   Jamieson/Orchard->Main St + gap, Maple->Vimy Ridge). Add any more to
+   Jamieson/Orchard->Main St + gap, Maple->Vimy Ridge, Lower Spring
+   St->Spring St (+old Spring St->Upper Spring St), Bostwick->Colonel
+   Bostwick, 1st->First Street). Add any more to
    `nameOverrides`/`wayNameOverrides` in `build_streets.js`. The "Label
    streets" toggle in-app (session 5) is built for exactly this review.
-4. Decide whether to hand-digitize the seven OSM-absent streets (The Prom,
-   Breakwater Blvd, Regatta Way, Harbour Way, Meek St, Upper Spring St,
-   Spruce St, Sandcastle Key — estimate geometry from Google Maps
-   satellite/road view, add as a manually-authored raw JSON file since
-   Overpass has nothing to pull).
+4. The 7 originally-known OSM-absent streets plus 4 more found in session
+   5/6's full Google Maps audit (11 total: The Prom, Breakwater Blvd,
+   Regatta Way, Harbour Way, Meek St, McKenzie Lane, Sandcastle Key,
+   Sailor's Alley, Briar Hill Street, McClary Ave, Spruce St) were all
+   hand-digitized and added in session 6 (`handDigitizedStreets` in
+   `build_streets.js`, ~20-40m positional tolerance). Nothing left on this
+   list unless a future audit finds more.
 5. Open questions from the plan (§8), still unanswered:
    - Point spread: keep 10/20/30/40 (obscurity x1-4) or go steeper?
    - Whole town in-bounds, or core-only? This got more pointed this
