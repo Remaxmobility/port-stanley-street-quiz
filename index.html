@@ -637,12 +637,38 @@
     }).addTo(debugLabelsLayer);
   });
   document.getElementById('debugToggle').addEventListener('click', () => {
-    debugLabelsOn = !debugLabelsOn;
+    const turningOn = !debugLabelsOn;
+    debugLabelsOn = turningOn;
     document.getElementById('debugToggle').classList.toggle('active', debugLabelsOn);
     if (debugLabelsOn) {
       debugLabelsLayer.addTo(map);
     } else {
       map.removeLayer(debugLabelsLayer);
+    }
+
+    // Closes the "peek then guess" loophole: turning labels ON reveals the
+    // current street's name/location, so it forfeits the round right then —
+    // a strike, and a new street — rather than just refusing to score a tap
+    // that comes later (which still let people toggle on, read the name,
+    // toggle off, and tap for real points).
+    if (turningOn && state.roundStatus === 'prompting') {
+      inputLocked = true;
+      feedbackLayer.clearLayers();
+      const strikes = state.strikes + 1;
+      const roundStatus = strikes >= 3 ? 'gameover' : 'prompting';
+      state = {
+        ...state,
+        strikes,
+        roundStatus,
+        history: [...state.history, {
+          street: state.currentStreet, guessLatLng: null, hit: false,
+          pointsAwarded: 0, distance: null, revealed: true,
+        }],
+      };
+      state = roundStatus === 'gameover'
+        ? { ...state, currentStreet: null }
+        : GameEngine.nextRound(state);
+      render();
     }
   });
 
