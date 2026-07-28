@@ -10,11 +10,12 @@ pull to cover two neighborhoods the original bbox had cut off.
 
 **Status: v1 playable and deployed, plus a server-backed top-10 leaderboard
 (session 7). Dataset now 82 records / 82 unique names — every street name
-maps to exactly one continuous chain, no fragments left.** Live on GitHub
-(`github.com/Remaxmobility/port-stanley-street-quiz`, public) with Vercel
-connected for auto-deploy on push. Step 7 (PWA export) not started. Step 8
-(leaderboard) is now DONE for the core version (see session 7); difficulty
-modes/other towns still not started.
+maps to exactly one continuous chain, no fragments left. Session 8 closed a
+scoring exploit around the "Label streets" debug toggle (see below).** Live
+on GitHub (`github.com/Remaxmobility/port-stanley-street-quiz`, public) with
+Vercel connected for auto-deploy on push. Step 7 (PWA export) not started.
+Step 8 (leaderboard) is now DONE for the core version (see session 7);
+difficulty modes/other towns still not started.
 
 ## Session 2 — Google Maps comparison and dataset expansion
 Compared the 57-street list against Google Maps by driving Chrome across
