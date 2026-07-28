@@ -706,11 +706,68 @@ proper name** (the bridge itself). Worth checking whether any other
 gap/gap-adjacent street in this dataset has a similarly separately-named
 bridge, causeway, or named connector sitting in the raw data unmerged.
 
+## Session 7 continued — Main St's real extent: Bridge/Colborne/Joseph to the roundabout
+Jason: "main st is still wrong it should start at bridge, Colbourne, joseph
+intersection and go straigh south to round about." (The Jamieson/Orchard
+merge reverted earlier this session was wrong, but that revert alone didn't
+fix Main St's actual north end — it just went back to being short of the
+real intersection.)
+
+Traced it and found a genuinely new variant of the "collateral damage from
+an earlier fix" pattern: **session 3's Colborne Street duplicate-triangle
+fix accidentally orphaned part of Main Street.** The exact junction node
+[42.6656116,-81.2119315] sits between Main St's old north end and the real
+Bridge/Colborne/Joseph intersection at [42.6660264,-81.2117931] — but the
+*only* OSM ways reaching that junction (126454147, 126454230) were tagged
+"Colborne Street" and got excluded back in session 3 as duplicates of
+Colborne's own through-route (126454125, which bypasses that junction
+entirely). Excluding them was correct *for Colborne St* — but it also cut
+off Main St's only path to the intersection, since nothing else in OSM
+covers that stretch under any name.
+
+Fix: pulled `126454147` back out of `excludeWayIds` (its sibling
+`126454230` stays excluded, still a genuine Colborne St duplicate — 147
+alone already reaches the full intersection) and re-tagged both it and the
+small connecting stub `1106642061` to "Main Street" via `wayNameOverrides`,
+keyed by way id since this is real geometry misattributed to the wrong
+street name, not missing/mistagged Main St data.
+
+**Also found a second, independent bug while verifying the south end**: a
+real roundabout (way `1106642053`, 22-pt closed loop, ~73m) sits where Main
+St meets it — same "closed loop breaks endpoint chaining" issue as the
+George St roundabout (session 5), except here nothing needed to *continue
+through* it (Main St dead-ends into it per Jason's description), so no
+connector was needed. But two short connectors linked the same north-arm
+junction to two rim points ~11m apart on the circle (`1106642057`, already
+part of the chain, and `1106642058`, stranding itself as a spurious extra
+14m "Main Street" record) — same duplicate-parallel-path pattern as
+Colborne/Selbourne/Frances. Excluded `1106642058`.
+
+Result: Main St is now one 347m chain, exactly
+Bridge/Colborne/Joseph -> roundabout rim, matching what Jason described.
+Colborne Street also consolidated from 2 records to 1 (its stray 10m stub
+was the same way now correctly reassigned to Main St). Two other small Main
+St fragments remain untouched and unmerged — `main-street-2` (48m, an odd
+chord through an external point) and `main-street-3` (71m, continuing south
+past the roundabout, this used to be the far end of the reverted
+Jamieson/Orchard merge) — deliberately left alone since Jason's description
+stopped at the roundabout; didn't want to repeat the over-reach that made
+the original Jamieson/Orchard merge wrong. Worth asking him directly if
+those should merge in or stay separate.
+
+Rebuilt, regenerated both inline files, `test_engine.js` + `test_fuzz.js`
+(1935 checks) green. Count: 86 -> 84 records, 82 unique names unchanged.
+
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
   but the specific correct extent hasn't been provided yet. Ask him for
   the same kind of fact as the Bridge St fix (e.g. "Oak St runs between X
   and Y") next session.
+- **`main-street-2` (48m) and `main-street-3` (71m)** — two small fragments
+  near the roundabout, deliberately left unmerged with the main 347m Main
+  St chain (see session 7 continued above). Ask Jason whether these are
+  really Main St continuing past the roundabout, or something else
+  entirely (unnamed connector, different real street) — don't guess.
 - Otherwise none known-broken. 87 streets (82 unique names) is the full
   set as of session 6; re-scanned clean (self-loops, duplicate ids, graph
   cycles) as of the session-3/4 full sweep — **that graph-cycle sweep has

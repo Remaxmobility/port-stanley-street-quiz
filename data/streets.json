@@ -674,7 +674,7 @@
     "points": 40
   },
   {
-    "id": "colborne-street-1",
+    "id": "colborne-street",
     "name": "Colborne Street",
     "geometry": [
       [
@@ -748,24 +748,6 @@
     ],
     "highwayClass": "secondary",
     "lengthMeters": 1123,
-    "obscurityWeight": 1,
-    "points": 10
-  },
-  {
-    "id": "colborne-street-2",
-    "name": "Colborne Street",
-    "geometry": [
-      [
-        42.6655206,
-        -81.2119368
-      ],
-      [
-        42.6656116,
-        -81.2119315
-      ]
-    ],
-    "highwayClass": "secondary",
-    "lengthMeters": 10,
     "obscurityWeight": 1,
     "points": 10
   },
@@ -2708,10 +2690,30 @@
       [
         42.6655206,
         -81.2119368
+      ],
+      [
+        42.6656116,
+        -81.2119315
+      ],
+      [
+        42.6656785,
+        -81.2118833
+      ],
+      [
+        42.6657948,
+        -81.2118386
+      ],
+      [
+        42.665906,
+        -81.2118079
+      ],
+      [
+        42.6660264,
+        -81.2117931
       ]
     ],
     "highwayClass": "residential",
-    "lengthMeters": 289,
+    "lengthMeters": 347,
     "obscurityWeight": 1,
     "points": 10
   },
@@ -2747,28 +2749,6 @@
   },
   {
     "id": "main-street-3",
-    "name": "Main Street",
-    "geometry": [
-      [
-        42.66296,
-        -81.2119493
-      ],
-      [
-        42.6630164,
-        -81.2120008
-      ],
-      [
-        42.6630671,
-        -81.2120426
-      ]
-    ],
-    "highwayClass": "residential",
-    "lengthMeters": 14,
-    "obscurityWeight": 1,
-    "points": 10
-  },
-  {
-    "id": "main-street-4",
     "name": "Main Street",
     "geometry": [
       [

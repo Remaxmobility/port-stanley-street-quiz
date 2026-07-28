@@ -56,6 +56,20 @@ const wayNameOverrides = {
   // node where George Street (126454194) ends — it's a mistagged
   // continuation of George Street, not part of Bridge Street.
   126454105: 'George Street',
+  // Per Jason: Main St starts at the Bridge/Colborne/Joseph intersection
+  // (42.6660264,-81.2117931) and runs south to the roundabout. OSM tags
+  // both these ways "Colborne Street", but they're actually Main St's own
+  // approach to that intersection — 1106642061 (42.6655206,-81.2119368 ->
+  // 42.6656116,-81.2119315) is the exact continuation of Main St's existing
+  // north end, and 126454147 (same start -> ... -> 42.6660264,-81.2117931)
+  // continues it the rest of the way to the real intersection. Both were
+  // previously indistinguishable from Colborne St's own short residential
+  // duplicate ways at the same junction (session 3's excludeWayIds fix) —
+  // 126454147 in particular had to be pulled OUT of excludeWayIds below and
+  // re-tagged here, since Colborne St's own through-route (126454125)
+  // doesn't need it, but Main St does.
+  1106642061: 'Main Street',
+  126454147: 'Main Street',
 };
 
 // OSM ways that duplicate another way's geometry under the same street name,
@@ -66,8 +80,10 @@ const wayNameOverrides = {
 // Verified by checking each excluded way's coordinates sit within ~30m of
 // an already-connected alternate path between the same two endpoints.
 const excludeWayIds = new Set([
-  126454147, // Colborne St (residential) — duplicates 126454125+1434586446
-  126454230, // Colborne St (residential) — duplicates 1434586446
+  126454230, // Colborne St (residential) — duplicates 1434586446. (Its
+             // sibling 126454147 duplicated the same stretch too, but is no
+             // longer excluded — see wayNameOverrides above, it's real
+             // Main St geometry, not a Colborne St duplicate.)
   126454134, // Selbourne Dr (2-pt straight) — duplicates 126454226 (13-pt
              // curve between the same two junction nodes); kept the more
              // detailed way. Without this the chain looped out-and-back
@@ -92,6 +108,14 @@ const excludeWayIds = new Set([
              // hadn't caught the rename. Excluded here rather than renamed
              // via nameOverrides so it doesn't create a second, overlapping
              // "McKenzie Lane" quiz entry alongside the hand-digitized one.
+  1106642058, // Main St (residential, 3pts) — duplicates 1106642057. Both
+             // connect the same north-arm junction (42.6630671,-81.2120426)
+             // to a roundabout rim point ~11m apart on the circle
+             // (idx2 vs idx5) — same functional junction, OSM just has two
+             // slightly different attachment nodes. 1106642057 is already
+             // part of the main chain; without this exclusion 1106642058
+             // stranded itself as a spurious separate 14m "Main Street"
+             // quiz entry.
 ]);
 
 // Per Jason: George St runs through the roundabout — currently split into
