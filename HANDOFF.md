@@ -8,14 +8,12 @@ applied street-name corrections from local knowledge, then compared the full
 street list against Google Maps (via Claude in Chrome) and expanded the OSM
 pull to cover two neighborhoods the original bbox had cut off.
 
-**Status: v1 playable and deployed. Dataset now 87 records / 82 unique
-names** (session 5 consolidated several mistagged/split streets down to
-76/71, then session 6 added 11 previously-missing streets found via a full
-Google Maps audit — see below). Live on GitHub
+**Status: v1 playable and deployed, plus a server-backed top-10 leaderboard
+(session 7). Dataset now 88 records / 82 unique names.** Live on GitHub
 (`github.com/Remaxmobility/port-stanley-street-quiz`, public) with Vercel
-connected for auto-deploy on push. Steps 7 (PWA export) and 8
-(leaderboard/difficulty modes) not started — plan explicitly marks those as
-later/future phases.
+connected for auto-deploy on push. Step 7 (PWA export) not started. Step 8
+(leaderboard) is now DONE for the core version (see session 7); difficulty
+modes/other towns still not started.
 
 ## Session 2 — Google Maps comparison and dataset expansion
 Compared the 57-street list against Google Maps by driving Chrome across
@@ -587,6 +585,84 @@ gap-connector past Orchard's south end) was incorrect — reverted both:
   was purely "undo the wrong merge," not a replacement correction. If
   Jason has a specific fix in mind for either street, get it next session.
 
+## Session 7 continued — Edith Cavell connector, Edith St->McKenzie Lane, leaderboard
+Same session, three more pieces of work.
+
+**Edith Cavell Boulevard reconnected.** Jason: it's one real road, broken
+into two OSM pieces — one off William St running west, one off Bartholemew
+St running east — threading through two roundabout/loop shapes in between
+that OSM has zero coverage of (confirmed: queried Overpass directly for that
+bbox three times, all three 504'd; a general search of all raw files for
+that bbox turned up nothing under any street name either). Confirmed the gap
+is real and continuous via Google Maps walking directions (William St ->
+Bartholemew end: "via Edith Cavell Blvd", 1.3km, no detour through another
+named street) plus close-up satellite/road tracing of the loop shapes.
+Added `edithCavellConnector` in `build_streets.js` (9-pt hand-digitized
+placeholder, same ~20-40m tolerance standard as the other hand-digitized
+geometry, anchored exactly on both real chain endpoints). Merged
+`edith-cavell-boulevard-1` (800m) + `-2` (525m) into one 1499m chain.
+
+**"Edith Street" was a stale-OSM duplicate of McKenzie Lane, not a separate
+street.** Jason: the Municipality of Central Elgin officially renamed this
+lane to McKenzie Lane specifically to avoid emergency-dispatch confusion
+with Edith Cavell Blvd (same road this session started with — direct
+follow-on). Checked coordinates: OSM way 126454240 ("Edith Street", 2-pt,
+61m) and the session-6 hand-digitized `mckenzie-lane` entry trace the same
+physical road (endpoints within ~5m of each other) — OSM just hadn't picked
+up the rename, and session 6's Google Maps audit added McKenzie Lane as a
+new hand-digitized street without realizing it already existed under the
+old OSM name. Excluded way 126454240 via `excludeWayIds` (not a
+`nameOverrides` rename, since that would've created a second overlapping
+"McKenzie Lane" entry rather than removing the duplicate). Count: 88 -> 88
+records but 83 -> 82 unique names (net: one fewer duplicate street name).
+
+Both fixes rebuilt `streets.json`/`road_segments.json`, regenerated both
+inline files, `test_engine.js` + `test_fuzz.js` (1947 checks) green.
+
+**Server-backed top-10 leaderboard added** (plan §6/§8, previously deferred).
+Jason wanted it shared across players, not per-browser — built as a Vercel
+serverless function rather than `localStorage`.
+- `api/leaderboard.js` (new): CommonJS, zero npm dependencies (uses global
+  `fetch`, available in Vercel's Node runtime). GET returns the top 10, POST
+  validates `{name, score}` (name trimmed/capped at 20 chars; score must be
+  an integer 0-3000 — real max is 2780 given the current 88-street dataset,
+  capped a bit higher so it doesn't need re-syncing on every dataset
+  change) and stores into a Redis sorted set (`ps-leaderboard`) via Vercel
+  KV's REST API, trimming to the top 10 after every write
+  (`ZREMRANGEBYRANK ... 0 -11`).
+- **First attempt used `export default` + a `"type": "module"`
+  `package.json`, which broke every existing CommonJS build/test script**
+  (`data/build_streets.js`, `test_engine.js`, `test_fuzz.js` all use
+  `require`/`module.exports`) — Node applies `"type": "module"` project-wide,
+  not just to the new file. Caught by re-running the test suite before
+  committing. Fixed by deleting `package.json` entirely and rewriting the
+  function as CommonJS (`module.exports = async function handler...`) —
+  Vercel's default Node runtime handles plain CommonJS `.js` files in `api/`
+  with no `package.json` needed at all.
+- `index.html`: leaderboard functions now call `/api/leaderboard` instead of
+  `localStorage`. Game-over screen shows a loading state, then either a
+  name-entry form (if the score qualifies for top 10) or just the list.
+  Degrades gracefully to an inline "Couldn't load leaderboard." message if
+  the API is unreachable — verified this doesn't affect the rest of the game.
+- **Real bug caught during browser testing, not code review**: the
+  "just-saved" row highlight compared the returned entry to the list by
+  object identity (`e === highlightEntry`). That works with an in-memory
+  mock but silently fails against any real API, because `fetch`/`res.json()`
+  deserializes the response into new objects — nothing is ever
+  reference-equal after an HTTP round-trip. Fixed by comparing on the
+  entry's `date` field (ISO timestamp, effectively unique) instead.
+- Tested via a local mock server matching `api/leaderboard.js`'s exact
+  request/response contract (real Vercel KV can't be exercised from this
+  sandbox — needs Jason's one-time dashboard action, see below) — verified
+  via `claude-in-chrome`: empty state, saving a score, the top-10 sort/trim,
+  the highlight (after the fix above), and the network-failure fallback.
+- **Blocking on Jason**: needs to link a Vercel KV database to the project
+  (dashboard -> Storage -> Create Database -> KV -> Connect to Project) —
+  this auto-injects `KV_REST_API_URL`/`KV_REST_API_TOKEN`, no manual env var
+  entry needed, just a redeploy after linking. Until that's done, the live
+  site's leaderboard will show "Couldn't load leaderboard." (graceful, not
+  broken) rather than actually working.
+
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
   but the specific correct extent hasn't been provided yet. Ask him for
@@ -616,7 +692,18 @@ gap-connector past Orchard's south end) was incorrect — reverted both:
   multiple names" bug class across sessions 3-6): scan the full dataset for
   any other street whose name has unusually few/short chains for its
   apparent length, the same smell that led to the Colborne/Selbourne/
-  Frances/Merville/Main St/Vimy Ridge/Spring St fixes.
+  Frances/Merville/Main St/Vimy Ridge/Spring St/Edith Cavell fixes.
+- **Vercel KV not yet linked** (session 7) — leaderboard code is deployed
+  but non-functional (shows a graceful error) until Jason does the
+  one-time dashboard step described in session 7 above.
+- Now that McKenzie Lane turned out to be a renamed OSM street rather than a
+  true OSM gap (session 7), worth a second look at the rest of the
+  session-6 `handDigitizedStreets` list (The Prom, Breakwater Blvd, Regatta
+  Way, Harbour Way, Meek St, Sandcastle Key, Sailor's Alley, Briar Hill
+  Street, McClary Ave, Spruce St) in case any of *those* are also stale OSM
+  names elsewhere in the raw data rather than genuine gaps — not checked
+  yet, McKenzie Lane was only caught because Jason happened to mention the
+  rename unprompted.
 
 ## Next steps
 1. **If any `data/raw_*.json` file is ever re-pulled from Overpass, or

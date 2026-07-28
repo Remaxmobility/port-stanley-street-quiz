@@ -1072,7 +1072,7 @@
     "points": 30
   },
   {
-    "id": "edith-cavell-boulevard-1",
+    "id": "edith-cavell-boulevard",
     "name": "Edith Cavell Boulevard",
     "geometry": [
       [
@@ -1198,17 +1198,35 @@
       [
         42.6618764,
         -81.2244843
-      ]
-    ],
-    "highwayClass": "residential",
-    "lengthMeters": 800,
-    "obscurityWeight": 3,
-    "points": 30
-  },
-  {
-    "id": "edith-cavell-boulevard-2",
-    "name": "Edith Cavell Boulevard",
-    "geometry": [
+      ],
+      [
+        42.6617486,
+        -81.224721
+      ],
+      [
+        42.6619063,
+        -81.224989
+      ],
+      [
+        42.6621035,
+        -81.2252571
+      ],
+      [
+        42.6622415,
+        -81.2253107
+      ],
+      [
+        42.6622711,
+        -81.2255252
+      ],
+      [
+        42.6622613,
+        -81.2257396
+      ],
+      [
+        42.6622021,
+        -81.2259005
+      ],
       [
         42.6623265,
         -81.2261473
@@ -1307,27 +1325,9 @@
       ]
     ],
     "highwayClass": "residential",
-    "lengthMeters": 525,
+    "lengthMeters": 1499,
     "obscurityWeight": 3,
     "points": 30
-  },
-  {
-    "id": "edith-street",
-    "name": "Edith Street",
-    "geometry": [
-      [
-        42.6643017,
-        -81.2352756
-      ],
-      [
-        42.6648511,
-        -81.2352411
-      ]
-    ],
-    "highwayClass": "residential",
-    "lengthMeters": 61,
-    "obscurityWeight": 4,
-    "points": 40
   },
   {
     "id": "edward-street",

@@ -140,6 +140,50 @@
   }
   .play-again:active { transform: scale(0.97); }
 
+  .highscore-section { margin-bottom: 20px; }
+  .highscore-entry {
+    margin-bottom: 14px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(246, 173, 85, 0.12);
+    border: 1px solid rgba(246, 173, 85, 0.35);
+  }
+  .highscore-entry.hidden { display: none; }
+  .highscore-prompt { font-size: 13px; font-weight: 700; color: var(--accent-2); margin-bottom: 8px; }
+  .highscore-form { display: flex; gap: 8px; }
+  .highscore-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    font-size: 14px;
+  }
+  .highscore-form input:focus { outline: 2px solid var(--accent); }
+  .highscore-form button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #06251f;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .highscore-form button:disabled { opacity: 0.6; cursor: default; }
+  .highscore-error { font-size: 12px; color: var(--danger); margin-top: 6px; min-height: 14px; }
+  .highscore-title { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+  .highscore-list { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .highscore-list li { display: flex; align-items: center; padding: 6px 8px; border-radius: 8px; }
+  .highscore-list li:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
+  .highscore-list li.new-entry { background: rgba(72, 187, 120, 0.2); font-weight: 700; }
+  .highscore-rank { color: var(--text-dim); width: 22px; flex-shrink: 0; }
+  .highscore-name { flex: 1; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .highscore-score { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .highscore-empty { color: var(--text-dim); font-size: 13px; padding: 6px 8px; }
+
   .leaflet-container { background: #e6e3dd !important; }
 
   .guess-marker {
@@ -273,6 +317,20 @@
       <thead><tr><th>Street</th><th>Pts</th><th>Result</th></tr></thead>
       <tbody id="breakdownBody"></tbody>
     </table>
+
+    <div class="highscore-section">
+      <div class="highscore-entry hidden" id="highscoreEntry">
+        <div class="highscore-prompt">Top 10 score! Enter your name:</div>
+        <div class="highscore-form">
+          <input type="text" id="highscoreNameInput" maxlength="20" placeholder="Your name" autocomplete="off">
+          <button id="highscoreSubmitBtn">Save</button>
+        </div>
+        <div class="highscore-error" id="highscoreError"></div>
+      </div>
+      <div class="highscore-title">Top 10</div>
+      <ol class="highscore-list" id="highscoreList"></ol>
+    </div>
+
     <button class="play-again" id="playAgainBtn">Play Again</button>
   </div>
 </div>
@@ -335,6 +393,78 @@
   let feedbackLayer = L.layerGroup().addTo(map);
   let inputLocked = false;
 
+  // Server-backed top-10 leaderboard (shared across all players) — see
+  // api/leaderboard.js. Requires a Vercel KV database linked to the project;
+  // fetches degrade to an inline error message if that's not set up yet.
+  function qualifiesForTop10(score, list) {
+    if (list.length < 10) return true;
+    return score > Math.min(...list.map(e => e.score));
+  }
+
+  async function fetchLeaderboard() {
+    const res = await fetch('/api/leaderboard');
+    if (!res.ok) throw new Error('leaderboard fetch failed: ' + res.status);
+    const data = await res.json();
+    return data.list || [];
+  }
+
+  async function registerHighScore(name, score) {
+    const res = await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score }),
+    });
+    if (!res.ok) throw new Error('leaderboard submit failed: ' + res.status);
+    return res.json(); // { list, entry }
+  }
+
+  function renderLeaderboard(list, highlightEntry) {
+    const el = document.getElementById('highscoreList');
+    el.innerHTML = '';
+    if (!list.length) {
+      el.innerHTML = '<div class="highscore-empty">No scores yet — be the first!</div>';
+      return;
+    }
+    list.forEach((e, i) => {
+      const li = document.createElement('li');
+      if (highlightEntry && e.date === highlightEntry.date) li.classList.add('new-entry');
+      const rank = document.createElement('span');
+      rank.className = 'highscore-rank';
+      rank.textContent = i + 1;
+      const name = document.createElement('span');
+      name.className = 'highscore-name';
+      name.textContent = e.name;
+      const score = document.createElement('span');
+      score.className = 'highscore-score';
+      score.textContent = e.score;
+      li.append(rank, name, score);
+      el.appendChild(li);
+    });
+  }
+
+  async function trySubmitHighScore() {
+    const nameInput = document.getElementById('highscoreNameInput');
+    const submitBtn = document.getElementById('highscoreSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving…';
+    try {
+      const { list, entry } = await registerHighScore(nameInput.value, state.score);
+      document.getElementById('highscoreEntry').classList.add('hidden');
+      renderLeaderboard(list, entry);
+    } catch (e) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save';
+      document.getElementById('highscoreError').textContent = "Couldn't save — try again.";
+    }
+  }
+  document.getElementById('highscoreSubmitBtn').addEventListener('click', trySubmitHighScore);
+  document.getElementById('highscoreNameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') trySubmitHighScore();
+  });
+
+  window.__psTest.getLeaderboard = fetchLeaderboard;
+  window.__psTest.registerHighScore = registerHighScore;
+
   window.__psTest.map = map;
   window.__psTest.getState = () => state;
   window.__psTest.tapLatLng = (lat, lon) => handleTap(L.latLng(lat, lon));
@@ -383,7 +513,24 @@
       tr.innerHTML = `<td>${h.street.name}</td><td>${h.pointsAwarded}</td><td>${h.hit ? 'Hit' : 'Miss'}</td>`;
       body.appendChild(tr);
     });
+
+    const entryBox = document.getElementById('highscoreEntry');
+    const submitBtn = document.getElementById('highscoreSubmitBtn');
+    entryBox.classList.add('hidden');
+    document.getElementById('highscoreNameInput').value = '';
+    document.getElementById('highscoreError').textContent = '';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save';
+    document.getElementById('highscoreList').innerHTML = '<div class="highscore-empty">Loading…</div>';
+
     document.getElementById('endOverlay').classList.add('show');
+
+    fetchLeaderboard().then(list => {
+      entryBox.classList.toggle('hidden', !qualifiesForTop10(state.score, list));
+      renderLeaderboard(list, null);
+    }).catch(() => {
+      document.getElementById('highscoreList').innerHTML = '<div class="highscore-empty">Couldn\'t load leaderboard.</div>';
+    });
   }
 
   function handleTap(latlng) {

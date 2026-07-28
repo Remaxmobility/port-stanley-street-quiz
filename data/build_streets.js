@@ -73,6 +73,15 @@ const excludeWayIds = new Set([
              // own start/end, so endpoint-only chainSegments can't bridge
              // through it — replaced below by georgeRoundaboutConnector,
              // an open arc between those two exact junction points.
+  126454240, // "Edith Street" (OSM, stale name) — per Jason, the Municipality
+             // of Central Elgin officially renamed this lane to McKenzie Lane
+             // to avoid emergency-dispatch confusion with Edith Cavell Blvd.
+             // Its 2-pt geometry ([42.6643017,-81.2352756]->[42.6648511,
+             // -81.2352411]) is the same physical road as the hand-digitized
+             // 'mckenzie-lane' entry below (endpoints within ~5m) — OSM just
+             // hadn't caught the rename. Excluded here rather than renamed
+             // via nameOverrides so it doesn't create a second, overlapping
+             // "McKenzie Lane" quiz entry alongside the hand-digitized one.
 ]);
 
 // Per Jason: George St runs through the roundabout — currently split into
@@ -91,6 +100,28 @@ const georgeRoundaboutConnector = {
     [42.6654568, -81.2258831], [42.6654686, -81.225839], [42.6654695, -81.225792],
     [42.6654393, -81.225709], [42.6654113, -81.2256814], [42.6653784, -81.2256674],
     [42.6653439, -81.2256682],
+  ],
+};
+
+// Per Jason: Edith Cavell Blvd is one real continuous road, broken in OSM
+// into two disconnected pieces — edith-cavell-boulevard-1 (comes off William
+// St, runs west) and edith-cavell-boulevard-2 (comes off Bartholemew St,
+// runs east) — with the middle stretch threading through two roundabout/
+// loop shapes entirely missing from OSM (confirmed zero ways of any kind in
+// that bbox; Overpass API also 504'd on every direct re-query attempted).
+// Confirmed real and continuous via Google Maps walking directions (William
+// St -> Bartholemew St end: "via Edith Cavell Blvd", 1.3km, no detour via
+// another named street) and close-up satellite/road tracing. Hand-digitized
+// placeholder geometry, same ~20-40m tolerance as handDigitizedStreets below
+// — anchored exactly on both real chain endpoints, approximate in between.
+const edithCavellConnector = {
+  id: 'edith-cavell-connector',
+  name: 'Edith Cavell Boulevard',
+  highway: 'residential',
+  geometry: [
+    [42.6618764, -81.2244843], [42.6617486, -81.2247210], [42.6619063, -81.2249890],
+    [42.6621035, -81.2252571], [42.6622415, -81.2253107], [42.6622711, -81.2255252],
+    [42.6622613, -81.2257396], [42.6622021, -81.2259005], [42.6623265, -81.2261473],
   ],
 };
 
@@ -160,7 +191,7 @@ const rawWithDupes = [
   .filter(way => !excludeWayIds.has(way.id))
   .map(way => wayNameOverrides[way.id] ? { ...way, name: wayNameOverrides[way.id] } : way)
   .map(way => nameOverrides[way.name] ? { ...way, name: nameOverrides[way.name] } : way)
-  .concat([georgeRoundaboutConnector], handDigitizedStreets);
+  .concat([georgeRoundaboutConnector, edithCavellConnector], handDigitizedStreets);
 
 // Overlapping Overpass bbox queries legitimately return the same way twice
 // when it crosses both boxes (e.g. East Road spans the original and north
