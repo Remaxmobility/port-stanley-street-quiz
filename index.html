@@ -494,11 +494,12 @@
     inputLocked = false;
   }
 
-  function showToast(hit, pointsAwarded) {
+  function showToast(hit, pointsAwarded, practice) {
     const toast = document.getElementById('toast');
     const card = document.getElementById('toastCard');
     card.className = 'toast-card ' + (hit ? 'hit' : 'miss');
-    card.textContent = hit ? 'Hit! +' + pointsAwarded : 'Miss';
+    const suffix = practice ? ' (practice, not scored)' : '';
+    card.textContent = (hit ? 'Hit! +' + pointsAwarded : 'Miss') + suffix;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 900);
   }
@@ -537,8 +538,19 @@
     if (inputLocked || state.roundStatus === 'gameover') return;
     inputLocked = true;
 
-    const guessState = GameEngine.submitGuess(state, latlng.lat, latlng.lng);
-    const round = guessState.history[guessState.history.length - 1];
+    const rawGuessState = GameEngine.submitGuess(state, latlng.lat, latlng.lng);
+    const rawRound = rawGuessState.history[rawGuessState.history.length - 1];
+
+    // "Label streets" is a learn/practice aid — it trivializes every guess,
+    // so a guess made while it's on still uses a turn (miss still costs a
+    // strike, same gameover rule) but doesn't award score.
+    const practice = debugLabelsOn;
+    const round = practice ? { ...rawRound, pointsAwarded: 0, practice: true } : rawRound;
+    const guessState = practice ? {
+      ...rawGuessState,
+      score: state.score,
+      history: [...state.history.slice(0, -1), round],
+    } : rawGuessState;
 
     feedbackLayer.clearLayers();
     L.marker(latlng, {
@@ -554,7 +566,7 @@
       L.polyline(round.street.geometry, { color: '#fc8181', weight: 5, opacity: 0.85 }).addTo(feedbackLayer);
     }
 
-    showToast(round.hit, round.pointsAwarded);
+    showToast(round.hit, round.pointsAwarded, practice);
     state = guessState;
     renderHud();
 

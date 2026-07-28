@@ -788,6 +788,18 @@ first time every street name maps to exactly one record). Rebuilt,
 regenerated both inline files, `test_engine.js` + `test_fuzz.js`
 (1943 checks) green. Count: 84 -> 82 records, 82 unique names unchanged.
 
+## Session 8 — Label-streets toggle: guesses don't score
+Jason: guesses while "Label streets" debug toggle on shouldn't count.
+`index.html` `handleTap` now checks `debugLabelsOn` at guess time. If on:
+round still uses a real turn — strikes/`roundStatus`/gameover all flow
+normally from the engine (a miss still costs a strike) — only `score` is
+frozen at its pre-guess value, `pointsAwarded` shown as 0, toast appends
+"(practice, not scored)". First version also froze strikes; Jason corrected
+that a miss should still cost a strike, only the score should be exempt.
+`game-engine.js` untouched (pure, no toggle awareness) — override done
+entirely in `index.html` by re-deriving state from the engine's raw result.
+No rebuild/test-suite step needed (no data/engine change).
+
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
   but the specific correct extent hasn't been provided yet. Ask him for
