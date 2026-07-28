@@ -43,6 +43,13 @@ const nameOverrides = {
   // [42.6653177,-81.2137799]) is an exact endpoint match for both chains'
   // gap-facing ends — real surveyed geometry, not a hand-digitized guess.
   'King George VI Lift Bridge': 'Bridge Street',
+  // Per Jason: "Walnut" not real name here — real road is Meek St. OSM's
+  // "Walnut Street" (139m, raw_west.json) and session 6's hand-digitized
+  // "Meek St" placeholder trace the same physical road (~30-50m apart, west
+  // Mitchell Heights, lon -81.233) — real OSM data wins over the guess, so
+  // rename to Meek St and drop the hand-digitized entry (see
+  // handDigitizedStreets below).
+  'Walnut Street': 'Meek St',
 };
 
 // Same idea as nameOverrides, but keyed by specific OSM way id instead of by
@@ -215,10 +222,6 @@ const handDigitizedStreets = [
   {
     id: 'sandcastle-key', name: 'Sandcastle Key', highway: 'residential',
     geometry: [[42.66727, -81.22496], [42.66659, -81.22353], [42.66524, -81.22289]],
-  },
-  {
-    id: 'meek-street', name: 'Meek St', highway: 'residential',
-    geometry: [[42.66470, -81.23329], [42.66390, -81.23360]],
   },
   {
     id: 'mckenzie-lane', name: 'McKenzie Lane', highway: 'residential',

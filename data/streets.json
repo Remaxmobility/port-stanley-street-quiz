@@ -2870,16 +2870,24 @@
     "name": "Meek St",
     "geometry": [
       [
-        42.6647,
-        -81.23329
+        42.6638089,
+        -81.23305
       ],
       [
-        42.6639,
-        -81.2336
+        42.6638651,
+        -81.2330165
+      ],
+      [
+        42.6645857,
+        -81.2329216
+      ],
+      [
+        42.665054,
+        -81.2329356
       ]
     ],
     "highwayClass": "residential",
-    "lengthMeters": 92,
+    "lengthMeters": 139,
     "obscurityWeight": 4,
     "points": 40
   },
@@ -3842,32 +3850,6 @@
     ],
     "highwayClass": "residential",
     "lengthMeters": 95,
-    "obscurityWeight": 4,
-    "points": 40
-  },
-  {
-    "id": "walnut-street",
-    "name": "Walnut Street",
-    "geometry": [
-      [
-        42.6638089,
-        -81.23305
-      ],
-      [
-        42.6638651,
-        -81.2330165
-      ],
-      [
-        42.6645857,
-        -81.2329216
-      ],
-      [
-        42.665054,
-        -81.2329356
-      ]
-    ],
-    "highwayClass": "residential",
-    "lengthMeters": 139,
     "obscurityWeight": 4,
     "points": 40
   },

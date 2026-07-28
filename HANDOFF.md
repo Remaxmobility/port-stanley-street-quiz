@@ -9,9 +9,10 @@ street list against Google Maps (via Claude in Chrome) and expanded the OSM
 pull to cover two neighborhoods the original bbox had cut off.
 
 **Status: v1 playable and deployed, plus a server-backed top-10 leaderboard
-(session 7). Dataset now 82 records / 82 unique names — every street name
+(session 7). Dataset now 81 records / 81 unique names — every street name
 maps to exactly one continuous chain, no fragments left. Session 8 closed a
-scoring exploit around the "Label streets" debug toggle (see below).** Live
+scoring exploit around the "Label streets" debug toggle; session 9 fixed a
+Walnut St/Meek St naming conflict (see below).** Live
 on GitHub (`github.com/Remaxmobility/port-stanley-street-quiz`, public) with
 Vercel connected for auto-deploy on push. Step 7 (PWA export) not started.
 Step 8 (leaderboard) is now DONE for the core version (see session 7);
@@ -813,6 +814,25 @@ added, a `revealed: true` history entry logged (no score), then
 player ever sees the label. The per-tap score-freeze from the previous fix
 stays in place too, for the case where someone leaves labels on and keeps
 playing. Pushed as `1f10398`.
+
+## Session 9 — Walnut Street/Meek St: real name conflict, duplicate merged
+Jason: "Walnut does not exist it should be Meek, the current Meek can be
+changed to walnut and delete the old." Checked coordinates: the real OSM
+"Walnut Street" way (`raw_west.json`, 139m, `[42.6638089,-81.23305]` to
+`[42.665054,-81.2329356]`) and session 6's hand-digitized "Meek St"
+placeholder (92m, `[42.6647,-81.23329]` to `[42.6639,-81.2336]`) trace the
+same physical road, ~30-50m apart — same west-Mitchell-Heights pattern as
+McKenzie Lane/Edith St in session 7, but reversed: there the hand-digitized
+name was right and the OSM name was a stale duplicate; here Jason says the
+OSM name ("Walnut") is wrong and the real name is "Meek St."
+
+Fix: added `'Walnut Street': 'Meek St'` to `nameOverrides` (real OSM
+geometry wins over the hand-digitized guess), and removed the now-redundant
+`meek-street` entry from `handDigitizedStreets` in `build_streets.js`. One
+`Meek St` record remains, using the real 139m OSM geometry. Rebuilt,
+regenerated both inline files, `test_engine.js` + `test_fuzz.js` (1938
+checks) green. Count: 82 -> 81 records, 82 -> 81 unique names (pure
+dedupe — no coverage lost).
 
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
