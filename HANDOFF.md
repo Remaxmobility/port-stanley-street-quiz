@@ -9,7 +9,8 @@ street list against Google Maps (via Claude in Chrome) and expanded the OSM
 pull to cover two neighborhoods the original bbox had cut off.
 
 **Status: v1 playable and deployed, plus a server-backed top-10 leaderboard
-(session 7). Dataset now 88 records / 82 unique names.** Live on GitHub
+(session 7). Dataset now 82 records / 82 unique names — every street name
+maps to exactly one continuous chain, no fragments left.** Live on GitHub
 (`github.com/Remaxmobility/port-stanley-street-quiz`, public) with Vercel
 connected for auto-deploy on push. Step 7 (PWA export) not started. Step 8
 (leaderboard) is now DONE for the core version (see session 7); difficulty
@@ -758,16 +759,34 @@ those should merge in or stay separate.
 Rebuilt, regenerated both inline files, `test_engine.js` + `test_fuzz.js`
 (1935 checks) green. Count: 86 -> 84 records, 82 unique names unchanged.
 
+## Session 7 continued — merged the two roundabout fragments into Main St
+Jason: "Merge those" (the `main-street-2`/`main-street-3` fragments flagged
+above). Same closed-loop-breaks-chaining problem as George St's roundabout:
+way `1106642053` (Main St's roundabout, 22-pt closed loop, ~73m) connects
+`main-street-1`'s south end (rim point idx5) to where the south arm
+reattaches (rim point idx14, ~15m from a third rim point idx19) — but
+`chainSegments` can't route through a closed loop, and can't represent a
+3-way branch (idx14 / idx19 / continuing south) as one polyline either.
+
+Added `mainStreetRoundaboutConnector` — the shorter of the loop's two arcs
+(29m, idx5 through idx6-idx13 to idx14), extracted directly from the
+roundabout's own real geometry, same technique as `georgeRoundaboutConnector`.
+Excluded way `1106642054` (the branch's redundant loop-back to rim point
+idx19 — same roundabout, ~15m from idx14, no new coverage) so the chain
+picks the through-path instead: roundabout -> arc -> idx14 -> branch point
+-> south to the previous `main-street-3` terminus.
+
+Result: **Main Street is now one continuous 477m chain**, start to finish —
+zero fragments left anywhere in the dataset (82 records = 82 unique names,
+first time every street name maps to exactly one record). Rebuilt,
+regenerated both inline files, `test_engine.js` + `test_fuzz.js`
+(1943 checks) green. Count: 84 -> 82 records, 82 unique names unchanged.
+
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
   but the specific correct extent hasn't been provided yet. Ask him for
   the same kind of fact as the Bridge St fix (e.g. "Oak St runs between X
   and Y") next session.
-- **`main-street-2` (48m) and `main-street-3` (71m)** — two small fragments
-  near the roundabout, deliberately left unmerged with the main 347m Main
-  St chain (see session 7 continued above). Ask Jason whether these are
-  really Main St continuing past the roundabout, or something else
-  entirely (unnamed connector, different real street) — don't guess.
 - Otherwise none known-broken. 87 streets (82 unique names) is the full
   set as of session 6; re-scanned clean (self-loops, duplicate ids, graph
   cycles) as of the session-3/4 full sweep — **that graph-cycle sweep has

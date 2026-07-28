@@ -116,6 +116,15 @@ const excludeWayIds = new Set([
              // part of the main chain; without this exclusion 1106642058
              // stranded itself as a spurious separate 14m "Main Street"
              // quiz entry.
+  1106642054, // Main St (residential, 3pts) — per Jason, merge the two small
+             // south-of-roundabout fragments into the main chain. That south
+             // arm branches at (42.6628248,-81.2115945): one way (1106642055)
+             // heads back to the roundabout rim at idx14, this one instead
+             // loops back to a DIFFERENT rim point (idx19, ~15m from idx14 —
+             // same roundabout, not new coverage) and another (1106642060)
+             // continues south. chainSegments can't represent a 3-way branch
+             // as one polyline, so this redundant loop-back is dropped in
+             // favor of the through-path idx14 -> branch point -> south.
 ]);
 
 // Per Jason: George St runs through the roundabout — currently split into
@@ -134,6 +143,26 @@ const georgeRoundaboutConnector = {
     [42.6654568, -81.2258831], [42.6654686, -81.225839], [42.6654695, -81.225792],
     [42.6654393, -81.225709], [42.6654113, -81.2256814], [42.6653784, -81.2256674],
     [42.6653439, -81.2256682],
+  ],
+};
+
+// Per Jason: merge main-street-2/main-street-3 (the two small fragments
+// south of the roundabout) into Main St's main chain. Same closed-loop
+// problem as George St's roundabout above — way 1106642053 (Main St's
+// roundabout, 22-pt closed loop, ~73m) can't be routed through by
+// chainSegments, so its two relevant rim points (idx5, already Main St's
+// existing south end; idx14, where the south arm reattaches) are bridged
+// with the shorter of the loop's two arcs (29m, through idx6-idx13) as a
+// normal open way, extracted directly from the roundabout's own geometry.
+const mainStreetRoundaboutConnector = {
+  id: 'main-street-roundabout-connector',
+  name: 'Main Street',
+  highway: 'residential',
+  geometry: [
+    [42.6629213, -81.2120766], [42.6628906, -81.2120996], [42.662856, -81.2121076],
+    [42.6628215, -81.2120995], [42.6627908, -81.2120763], [42.6627684, -81.2120425],
+    [42.662755, -81.2120008], [42.6627534, -81.2119768], [42.662752, -81.2119555],
+    [42.6627568, -81.2119279],
   ],
 };
 
@@ -225,7 +254,7 @@ const rawWithDupes = [
   .filter(way => !excludeWayIds.has(way.id))
   .map(way => wayNameOverrides[way.id] ? { ...way, name: wayNameOverrides[way.id] } : way)
   .map(way => nameOverrides[way.name] ? { ...way, name: nameOverrides[way.name] } : way)
-  .concat([georgeRoundaboutConnector, edithCavellConnector], handDigitizedStreets);
+  .concat([georgeRoundaboutConnector, edithCavellConnector, mainStreetRoundaboutConnector], handDigitizedStreets);
 
 // Overlapping Overpass bbox queries legitimately return the same way twice
 // when it crosses both boxes (e.g. East Road spans the original and north
