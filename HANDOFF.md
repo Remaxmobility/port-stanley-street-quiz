@@ -101,6 +101,12 @@ this doc if that's been updated more recently.)
   boundaries, shared junctions, malformed input, full-deck playthrough,
   double-submit purity). Re-run any time `streets.json` changes.
 - `.gitignore` — excludes `.claude/` (session 4, before first git push).
+- `api/leaderboard.js` — session 7 addition. Vercel serverless function
+  (CommonJS, zero npm dependencies), GET/POST backing the top-10
+  leaderboard via a Vercel KV (Upstash Redis) sorted set. See session 7 in
+  the log below for the full story, including why it's plain CommonJS with
+  no `package.json` in the repo (adding one broke every other CommonJS
+  script here).
 
 ## Key decisions
 - **Overpass API is reachable via `WebFetch` but not via `Bash`/`curl`** in
@@ -787,11 +793,12 @@ regenerated both inline files, `test_engine.js` + `test_fuzz.js`
   but the specific correct extent hasn't been provided yet. Ask him for
   the same kind of fact as the Bridge St fix (e.g. "Oak St runs between X
   and Y") next session.
-- Otherwise none known-broken. 87 streets (82 unique names) is the full
-  set as of session 6; re-scanned clean (self-loops, duplicate ids, graph
-  cycles) as of the session-3/4 full sweep — **that graph-cycle sweep has
-  not been re-run since session 5/6's changes**, worth doing once more
-  corrections land rather than after every single one.
+- Otherwise none known-broken. 82 records / 82 unique names as of session
+  7 (every street name now maps to exactly one continuous chain — first
+  time that's been true). The self-loop/duplicate-id/graph-cycle sweep
+  itself hasn't been re-run since session 5/6's changes, though — worth
+  doing once more corrections land rather than after every single one,
+  given how much topology changed this session (Bridge St, Main St x2).
 - Unresolved (Jason's explicit call: keep local knowledge over Google in
   both cases, see session 5 continued above):
   - Hillcrest Dr vs Franklin Drive (kept Franklin Drive)
@@ -838,11 +845,16 @@ regenerated both inline files, `test_engine.js` + `test_fuzz.js`
    corrections (found and fixed so far: Hillcrest->Franklin,
    Fairview/Fernie->Brayside, Victoria->Harrison Place, Bridge St's west
    stub->George Street, Merville->Brayside, George St roundabout topology,
-   Jamieson/Orchard->Main St + gap, Maple->Vimy Ridge, Lower Spring
-   St->Spring St (+old Spring St->Upper Spring St), Bostwick->Colonel
-   Bostwick, 1st->First Street). Add any more to
-   `nameOverrides`/`wayNameOverrides` in `build_streets.js`. The "Label
-   streets" toggle in-app (session 5) is built for exactly this review.
+   Jamieson/Orchard->Main St + gap [session 5, then reverted session 7 as
+   wrong], Maple->Vimy Ridge, Lower Spring St->Spring St (+old Spring
+   St->Upper Spring St), Bostwick->Colonel Bostwick, 1st->First Street,
+   Edith Cavell Blvd reconnected across two roundabouts, Edith St->McKenzie
+   Lane dedupe, Bridge St reconnected across the lift bridge, Main St's
+   real extent fixed (Bridge/Colborne/Joseph -> roundabout, collateral
+   damage from session 3's Colborne St fix) and its two roundabout
+   fragments merged in). Add any more to `nameOverrides`/`wayNameOverrides`
+   in `build_streets.js`. The "Label streets" toggle in-app (session 5) is
+   built for exactly this review.
 4. The 7 originally-known OSM-absent streets plus 4 more found in session
    5/6's full Google Maps audit (11 total: The Prom, Breakwater Blvd,
    Regatta Way, Harbour Way, Meek St, McKenzie Lane, Sandcastle Key,
@@ -859,6 +871,8 @@ regenerated both inline files, `test_engine.js` + `test_fuzz.js`
      approved including it, but worth confirming it still feels like
      "Port Stanley" gameplay-wise once he's played it.
    - Any streets to exclude entirely (private lanes, unnamed access roads)?
-6. Once gameplay/data are locked in: step 7 (manifest.json + service worker
-   for installable PWA) and step 8 (leaderboard, difficulty select, other
-   towns) per plan — both explicitly deferred, not started.
+6. Step 8's leaderboard is done (session 7 — server-backed via Vercel KV/
+   Upstash Redis, see above). Once gameplay/data are otherwise locked in:
+   step 7 (manifest.json + service worker for installable PWA) and the
+   rest of step 8 (difficulty select, other towns) per plan — still not
+   started.
