@@ -656,12 +656,25 @@ serverless function rather than `localStorage`.
   sandbox — needs Jason's one-time dashboard action, see below) — verified
   via `claude-in-chrome`: empty state, saving a score, the top-10 sort/trim,
   the highlight (after the fix above), and the network-failure fallback.
-- **Blocking on Jason**: needs to link a Vercel KV database to the project
-  (dashboard -> Storage -> Create Database -> KV -> Connect to Project) —
-  this auto-injects `KV_REST_API_URL`/`KV_REST_API_TOKEN`, no manual env var
-  entry needed, just a redeploy after linking. Until that's done, the live
-  site's leaderboard will show "Couldn't load leaderboard." (graceful, not
-  broken) rather than actually working.
+- **Database linked and verified live, same session.** Vercel's native "KV"
+  product has been folded into their Marketplace — created an "Upstash for
+  Redis" resource instead (`port-stanley-leaderboard`, Free plan, region
+  iad1) via Storage -> Create Database -> Upstash -> Upstash for Redis,
+  through the dashboard with Jason's explicit go-ahead (including a
+  separate confirmation before accepting Upstash's ToS/data-sharing terms,
+  since that's a distinct consent from "link the database"). Its
+  auto-injected env vars (`KV_REST_API_URL`, `KV_REST_API_TOKEN`, plus
+  `_READ_ONLY_TOKEN`/`KV_URL`/`REDIS_URL` variants) matched
+  `api/leaderboard.js`'s expected names exactly — no code changes needed.
+  Redeployed the existing commit (Deployments -> ... -> Redeploy) to pick up
+  the new env vars, then verified the full round-trip against the live site
+  (`port-stanley-street-quiz.vercel.app`): GET returned `{"list":[]}`,
+  played a real game to game-over, saved a test score, confirmed it
+  appeared correctly sorted/highlighted. Cleaned up the test entry via
+  Upstash's REPL (`DEL ps-leaderboard` — had to briefly toggle the REPL's
+  Safe Mode off, since it blocks `DEL` by default; toggled back on after).
+  Live leaderboard is empty and ready for real play now, not blocked on
+  anything further.
 
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
@@ -693,9 +706,6 @@ serverless function rather than `localStorage`.
   any other street whose name has unusually few/short chains for its
   apparent length, the same smell that led to the Colborne/Selbourne/
   Frances/Merville/Main St/Vimy Ridge/Spring St/Edith Cavell fixes.
-- **Vercel KV not yet linked** (session 7) — leaderboard code is deployed
-  but non-functional (shows a graceful error) until Jason does the
-  one-time dashboard step described in session 7 above.
 - Now that McKenzie Lane turned out to be a renamed OSM street rather than a
   true OSM gap (session 7), worth a second look at the rest of the
   session-6 `handDigitizedStreets` list (The Prom, Breakwater Blvd, Regatta
