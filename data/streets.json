@@ -382,9 +382,21 @@
     "points": 40
   },
   {
-    "id": "bridge-street-1",
+    "id": "bridge-street",
     "name": "Bridge Street",
     "geometry": [
+      [
+        42.66464,
+        -81.2147455
+      ],
+      [
+        42.6649257,
+        -81.2143552
+      ],
+      [
+        42.6649794,
+        -81.2142715
+      ],
       [
         42.6653177,
         -81.2137799
@@ -423,29 +435,7 @@
       ]
     ],
     "highwayClass": "secondary",
-    "lengthMeters": 162,
-    "obscurityWeight": 1,
-    "points": 10
-  },
-  {
-    "id": "bridge-street-2",
-    "name": "Bridge Street",
-    "geometry": [
-      [
-        42.6649794,
-        -81.2142715
-      ],
-      [
-        42.6649257,
-        -81.2143552
-      ],
-      [
-        42.66464,
-        -81.2147455
-      ]
-    ],
-    "highwayClass": "secondary",
-    "lengthMeters": 54,
+    "lengthMeters": 271,
     "obscurityWeight": 1,
     "points": 10
   },
@@ -2396,24 +2386,6 @@
     ],
     "highwayClass": "secondary",
     "lengthMeters": 260,
-    "obscurityWeight": 2,
-    "points": 20
-  },
-  {
-    "id": "king-george-vi-lift-bridge",
-    "name": "King George VI Lift Bridge",
-    "geometry": [
-      [
-        42.6649794,
-        -81.2142715
-      ],
-      [
-        42.6653177,
-        -81.2137799
-      ]
-    ],
-    "highwayClass": "secondary",
-    "lengthMeters": 55,
     "obscurityWeight": 2,
     "points": 20
   },

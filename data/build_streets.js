@@ -33,6 +33,16 @@ const nameOverrides = {
   // correction overriding Google, so Google wins.
   'Bostwick Street': 'Colonel Bostwick Street',
   '1st Street': 'First Street',
+  // Per Jason: Bridge St runs Carlow Rd -> Colborne St as one road. The two
+  // existing Bridge Street chains already reach those exact junctions
+  // (bridge-street-2 end = Carlow Rd interior node, bridge-street-1 end =
+  // Colborne St interior node) but don't connect to EACH OTHER — OSM has
+  // the ~55m stretch between them (the King George VI Lift Bridge itself)
+  // as its own separate way, tagged with the bridge's own name instead of
+  // "Bridge Street". Its geometry ([42.6649794,-81.2142715] ->
+  // [42.6653177,-81.2137799]) is an exact endpoint match for both chains'
+  // gap-facing ends — real surveyed geometry, not a hand-digitized guess.
+  'King George VI Lift Bridge': 'Bridge Street',
 };
 
 // Same idea as nameOverrides, but keyed by specific OSM way id instead of by

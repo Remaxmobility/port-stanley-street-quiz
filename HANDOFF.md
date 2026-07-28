@@ -676,6 +676,36 @@ serverless function rather than `localStorage`.
   Live leaderboard is empty and ready for real play now, not blocked on
   anything further.
 
+## Session 7 continued — Bridge Street reconnected across the lift bridge
+Jason: "Fix bridge street, it goes from Carlow Road to colbourne." Checked
+topology first: both existing Bridge Street chains already reached those
+exact junctions (`bridge-street-2`'s end is an exact interior-node match on
+Carlow Road; `bridge-street-1`'s end is an exact interior-node match on
+Colborne Street) — so per-chain, nothing was wrong. The two chains just
+didn't connect to *each other*, split by a real ~55m gap at the King George
+VI Lift Bridge (this was already known and accepted as real per session 3).
+
+Unlike every other gap fixed so far, this one didn't need hand-digitizing:
+searched the raw OSM files for any way near the gap's two endpoints and
+found way `126454128`, tagged **"King George VI Lift Bridge"** (its own
+distinct OSM name, not "Bridge Street") — real surveyed geometry, and its
+two endpoints are an *exact* zero-distance match for both chains' gap-facing
+ends. It simply never got included in the "Bridge Street" quiz entry because
+`byName` grouping only looks at the name string. Added `'King George VI Lift
+Bridge': 'Bridge Street'` to `nameOverrides`; the three ways now chain
+cleanly into one continuous 271m Bridge Street, Carlow Rd -> Colborne St.
+Rebuilt, regenerated both inline files, `test_engine.js` + `test_fuzz.js`
+(1937 checks) green. Count: 88 -> 86 records, 82 unique names unchanged
+(pure consolidation, Bridge Street was already counted once in the name
+total either way).
+
+Worth remembering as a new variant of the "OSM split one street" bug class:
+this time the missing piece wasn't absent from OSM or mistagged as a
+*different real street's* name — it was tagged with the **feature's own
+proper name** (the bridge itself). Worth checking whether any other
+gap/gap-adjacent street in this dataset has a similarly separately-named
+bridge, causeway, or named connector sitting in the raw data unmerged.
+
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
   but the specific correct extent hasn't been provided yet. Ask him for
