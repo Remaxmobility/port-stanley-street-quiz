@@ -800,6 +800,19 @@ that a miss should still cost a strike, only the score should be exempt.
 entirely in `index.html` by re-deriving state from the engine's raw result.
 No rebuild/test-suite step needed (no data/engine change).
 
+## Session 8 continued — closed the peek-then-guess loophole
+Jason: turning labels on, reading the name, then turning off and tapping for
+real points still worked — the earlier fix only stopped scoring on taps made
+*while* the toggle was on, not the toggle-off-then-guess sequence. Moved the
+penalty to the toggle itself: the `debugToggle` click handler now checks for
+an ON transition (`turningOn`) while a round is actively waiting
+(`state.roundStatus === 'prompting'`) and immediately forfeits it — strike
+added, a `revealed: true` history entry logged (no score), then
+`GameEngine.nextRound` (or gameover if that was strike 3) — before the
+player ever sees the label. The per-tap score-freeze from the previous fix
+stays in place too, for the case where someone leaves labels on and keeps
+playing. Pushed as `1f10398`.
+
 ## Pending issues
 - **Oak Street extent/connectivity** — Jason confirmed something's wrong
   but the specific correct extent hasn't been provided yet. Ask him for
